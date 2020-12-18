@@ -109,7 +109,7 @@ int pm_makeFSM(pm_t *tempTree)//define about every state who is his failure stat
                 if (tempState2->depth == 1)
                 {
                     tempState2->fail = tempState;
-                    printf("Setting f(%d)=%d\n", tempState2->id, tempState2->fail->id); //setting f(8)=1
+                    printf("Setting f(%d)=%d\n", tempState2->id, tempState2->fail->id);
                 }
 
                 else
@@ -125,7 +125,7 @@ int pm_makeFSM(pm_t *tempTree)//define about every state who is his failure stat
                         go = pm_goto_get(tempState->fail, edge->label);
                         tempState2->fail = go;
                     }
-                    printf("Setting f(%d)=%d\n", tempState2->id, tempState2->fail->id); //setting f(8)=1
+                    printf("Setting f(%d)=%d\n", tempState2->id, tempState2->fail->id);
                 }
             }
             if (tempState2->fail->output != NULL && slist_head(tempState2->fail->output) != NULL)
