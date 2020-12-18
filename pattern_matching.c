@@ -102,7 +102,7 @@ int pm_makeFSM(pm_t *tempTree)//define about every state who is his failure stat
             if (go != NULL)
             {
                 tempState2->fail = go;
-                printf("Setting f(%d)=%d\n", tempState2->id, tempState2->fail->id); //setting f(8)=1
+                printf("Setting f(%d)=%d\n", tempState2->id, tempState2->fail->id);
             }
             else
             {
