@@ -1,279 +1,331 @@
-#include "slist.h"
 #include "pattern_matching.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
 
-/* Initializes the fsm parameters (the fsm itself sould be allocated).  Returns 0 on success, -1 on failure. 
-*  this function should init zero state
-*/
-int pm_init(pm_t *tree)//initilaize the pm_t
+//----- Initilaize the FSM veriables
+int pm_init(pm_t *fsm)
 {
-    if (tree == NULL)
+    if (fsm == NULL)
+    {
         return -1;
-    tree->newstate = 0;
-    tree->zerostate = (pm_state_t *)malloc(sizeof(pm_state_t));
-    if (tree->zerostate == NULL)
+    }
+    fsm->newstate = 0;
+    fsm->zerostate = (pm_state_t *)malloc(sizeof(pm_state_t));
+    if (fsm->zerostate == NULL)
+    {
         return -1;
-    tree->zerostate->depth = 0;
-    tree->zerostate->fail = NULL;
-    tree->zerostate->id = tree->newstate;
-    tree->zerostate->output = NULL;
-    tree->zerostate->_transitions = (slist_t *)malloc(sizeof(slist_t));
-    if (tree->zerostate->_transitions == NULL)
+    }
+
+    //----- initilize the zerostate parameters:
+    fsm->zerostate->_transitions = (slist_t *)malloc(sizeof(slist_t));
+    if (fsm->zerostate->_transitions == NULL)
+    {
         return -1;
-    slist_init(tree->zerostate->_transitions);
-    tree->newstate = tree->newstate + 1;
+    }
+    slist_init(fsm->zerostate->_transitions);
+    fsm->zerostate->depth = 0;
+    fsm->zerostate->id = 0;
+    fsm->zerostate->output = NULL;
+    fsm->zerostate->fail = NULL;
+
+    fsm->newstate++;
+
     return 0;
 }
 
-/* Adds a new string to the fsm, given that the string is of length n. 
-   Returns 0 on success, -1 on failure.*/
-int pm_addstring(pm_t *temp, unsigned char *word, size_t n)//creates the states according the text
+//----- Return the destination state if there is an edge that connect the source to the destination state with specific symbol 
+pm_state_t *pm_goto_get(pm_state_t *state, unsigned char symbol)
 {
-    if (temp == NULL || temp->zerostate == NULL || word == NULL || strlen(word) != n)
-        return -1;
-    pm_state_t *runner = temp->zerostate;
-    pm_state_t *new;
-    for (int i = 0; i < n; i++)
+    int findIndication = 0; // '0' symbol not found, '1' found.
+    slist_node_t *transitionPtr = slist_head(state->_transitions);
+    pm_labeled_edge_t *edge;
+    while (transitionPtr != NULL)
     {
-        if (pm_goto_get(runner, word[i]) == NULL)
+        edge = (pm_labeled_edge_t *)slist_data(transitionPtr);
+        if (edge->label == symbol)
         {
-            new = (pm_state_t *)malloc(sizeof(pm_state_t));
-            if (new == NULL)
-                return -1;
-            new->depth = runner->depth + 1;
-            new->fail = NULL;
-            new->id = temp->newstate;
-            new->output = (slist_t *)malloc(sizeof(slist_t));
-            if (new->output == NULL)
-                return -1;
-            slist_init(new->output);
-            new->_transitions = (slist_t *)malloc(sizeof(slist_t));
-            if (new->_transitions == NULL)
-                return -1;
-            slist_init(new->_transitions);
-            pm_goto_set(runner, word[i], new);
-            runner = new;
-            temp->newstate++;
+            findIndication = 1;
+            break;
+        }
+        transitionPtr = slist_next(transitionPtr);
+    }
+
+    if (findIndication == 1)
+    {
+        return edge->state;
+    }
+    else
+    {
+        return NULL;
+    }
+}
+
+//----- Set new edge that connect two states with symbol 
+int pm_goto_set(pm_state_t *from_state, unsigned char symbol, pm_state_t *to_state)
+{
+    //----- initilize the new lable
+    pm_labeled_edge_t *newLableToAdd = (pm_labeled_edge_t *)malloc(sizeof(pm_labeled_edge_t));
+    if (newLableToAdd == NULL)
+    {
+        return -1;
+    }
+    newLableToAdd->label = symbol;
+    newLableToAdd->state = to_state;
+
+    //----- add the new state to the 'from_state' as a transition
+    slist_append(from_state->_transitions, newLableToAdd);
+    printf("%d -> %c -> %d\n",from_state->id,symbol,to_state->id);
+
+    return 0;
+}
+
+//----- Add new lable (if not exists) to the FSM
+int pm_addstring(pm_t *fsm, unsigned char *stringToAdd, size_t n)
+{
+    if (fsm == NULL || (fsm->newstate + n) > PM_CHARACTERS || stringToAdd == NULL || n <= 0 || strlen(stringToAdd) != n)
+    {
+        return -1;
+    }
+
+    int charIndexInString = 0;
+    pm_state_t *statePtr = fsm->zerostate;
+    while (charIndexInString < n && fsm->newstate != 1)
+    {
+        if (pm_goto_get(statePtr, stringToAdd[charIndexInString]) != NULL)
+        {
+            statePtr = pm_goto_get(statePtr, stringToAdd[charIndexInString]);
+            charIndexInString++;
         }
         else
         {
-            runner = pm_goto_get(runner, word[i]);
+            break;
         }
     }
-    if (slist_append(runner->output, word) == -1)
-        return -1;
-    return 0;
-}
 
-/* Finalizes construction by setting up the failrue transitions, as
-   well as the goto transitions of the zerostate. 
-   Returns 0 on success, -1 on failure.*/
-int pm_makeFSM(pm_t *tempTree)//define about every state who is his failure state 
-{
-    if (tempTree == NULL)
-        return -1;
-    slist_t *fail = (slist_t *)malloc(sizeof(slist_t));
-    if (fail == NULL)
-        return -1;
-    slist_init(fail);
-    slist_node_t *transitionTemp;
-    pm_state_t *tempState = tempTree->zerostate;
-    pm_state_t *tempState2;
-    pm_state_t *go;
-    pm_labeled_edge_t *edge;
-    slist_append(fail, tempState);
-    while (slist_head(fail) != NULL)//every iteration we take one state and define his failure state 
+    //----- verify that we don't pass the all string
+    if (statePtr == fsm->zerostate || (charIndexInString + 1) <= n)
     {
-        tempState = slist_pop_first(fail);
-        if (tempState->_transitions == NULL)
-            continue;
-        transitionTemp = slist_head(tempState->_transitions);
-        while (transitionTemp != NULL)
+        for (int i = charIndexInString; i < n; i++)
         {
-            if (slist_data(transitionTemp) == NULL)
-                break;
-
-            edge = slist_data(transitionTemp);
-            tempState2 = edge->state;
-            go = pm_goto_get(tempState->fail, edge->label);
-            if (go != NULL)
+            pm_state_t *to_state = (pm_state_t *)malloc(sizeof(pm_state_t));
+            if (to_state == NULL)
             {
-                tempState2->fail = go;
-                printf("Setting f(%d)=%d\n", tempState2->id, tempState2->fail->id);
-            }
-            else
-            {
-                if (tempState2->depth == 1)
-                {
-                    tempState2->fail = tempState;
-                    printf("Setting f(%d)=%d\n", tempState2->id, tempState2->fail->id);
-                }
-
-                else
-                {
-                    while (go == NULL)
-                    {
-                        tempState = tempState->fail;
-                        if (tempState == NULL)
-                        {
-                            tempState2->fail = tempTree->zerostate;
-                            break;
-                        }
-                        go = pm_goto_get(tempState->fail, edge->label);
-                        tempState2->fail = go;
-                    }
-                    printf("Setting f(%d)=%d\n", tempState2->id, tempState2->fail->id);
-                }
-            }
-            if (tempState2->fail->output != NULL && slist_head(tempState2->fail->output) != NULL)
-                slist_append_list(tempState2->output, tempState2->fail->output);
-            int x = slist_append(fail, tempState2);
-            if (x != 0)
                 return -1;
-            transitionTemp = slist_next(transitionTemp);//step over the 'sons' of the current state 
+            }
+            printf("Allocating state %d\n",fsm->newstate);
+            to_state->fail = NULL;
+
+            //----- initilize new state parameters
+            to_state->depth = statePtr->depth + 1;
+            to_state->id = fsm->newstate;
+            fsm->newstate++;
+            to_state->_transitions = (slist_t *)malloc(sizeof(slist_t));
+            if (to_state->_transitions == NULL)
+            {
+                return -1;
+            }
+            to_state->output = (slist_t *)malloc(sizeof(slist_t));
+            if (to_state->output == NULL)
+            {
+                return -1;
+            }
+            slist_init(to_state->_transitions);
+            slist_init(to_state->output);
+
+            //----- if it's the last character of the string add the string to stat's output
+            if (i + 1 == n)
+            {
+                //----- add new node to the outputs list
+                slist_append(to_state->output, stringToAdd);
+            }
+            pm_goto_set(statePtr, stringToAdd[i], to_state);
+            statePtr = to_state;
         }
     }
-    free(fail);
 }
 
-/* Set a transition arrow from this from_state, via a symbol, to a
-   to_state. will be used in the pm_addstring and pm_makeFSM functions.
-   Returns 0 on success, -1 on failure.*/
-int pm_goto_set(pm_state_t *from_state, unsigned char symbol, pm_state_t *to_state)//connect one state to another with edge with symbol
+//----- Initilaize all FSM state's failure state
+int pm_makeFSM(pm_t *fsm)
 {
-    if (from_state->_transitions == NULL)//create transition for the from_state if he doesn't have 'sons'
+    if (fsm == NULL)
     {
-        from_state->_transitions = (slist_t *)malloc(sizeof(slist_t));
-        if (from_state == NULL)
-            return -1;
-        slist_init(from_state->_transitions);
-    }
-    pm_labeled_edge_t *sym = (pm_labeled_edge_t *)malloc(sizeof(pm_labeled_edge_t));//temporary edge 
-    if (sym == NULL)
         return -1;
-    sym->label = symbol;
-    sym->state = to_state;
-    slist_append(from_state->_transitions, sym);
-    printf("Allocating state %d \n %d -> %c -> %d \n", sym->state->id, from_state->id, sym->label, sym->state->id); //example: print "ALLOCATING state 3 3->b->4"
+    }
+
+    if(fsm->zerostate->_transitions == NULL){
+        return 0;
+    }
+
+    slist_t *statesQueue = (slist_t *)malloc(sizeof(slist_t));
+    if (statesQueue == NULL)
+    {
+        return -1;
+    }
+
+    slist_init(statesQueue);
+
+    //----- initilize the zerostate transitions failure states
+    slist_node_t *statePtr = slist_head(fsm->zerostate->_transitions);
+    while (statePtr != NULL)
+    {
+        slist_append(statesQueue, ((pm_labeled_edge_t *)slist_data(statePtr))->state);
+        ((pm_labeled_edge_t *)slist_data(statePtr))->state->fail = fsm->zerostate;
+        statePtr = slist_next(statePtr);
+    }
+
+    pm_state_t *fatherState;
+    //----- initilize the rest states failure states
+    while (statesQueue->head != NULL)
+    {
+        fatherState = slist_pop_first(statesQueue);
+        if (fatherState != NULL && fatherState->_transitions != NULL)
+        {
+            statePtr = slist_head(fatherState->_transitions);
+            while (statePtr != NULL)
+            {
+                slist_append(statesQueue, ((pm_labeled_edge_t *)slist_data(statePtr))->state);
+                while (fatherState != NULL)
+                {
+                    if (pm_goto_get(fatherState->fail, ((pm_labeled_edge_t *)slist_data(statePtr))->label) != NULL)
+                    {
+                        ((pm_labeled_edge_t *)slist_data(statePtr))->state->fail = pm_goto_get(fatherState->fail,
+                                                                                               ((pm_labeled_edge_t *)slist_data(statePtr))->label);
+                        printf("Setting f(%d) = %d\n",
+                        ((pm_labeled_edge_t *)slist_data(statePtr))->state->id,((pm_labeled_edge_t *)slist_data(statePtr))->state->fail->id);
+                        break;
+                    }
+                    if (fatherState->fail == fsm->zerostate)
+                    {
+                        ((pm_labeled_edge_t *)slist_data(statePtr))->state->fail = fsm->zerostate;
+                        break;
+                    }
+                    fatherState = fatherState->fail;
+                }
+                slist_append_list(((pm_labeled_edge_t *)slist_data(statePtr))->state->output, ((pm_labeled_edge_t *)slist_data(statePtr))->state->fail->output);
+                statePtr = slist_next(statePtr);
+            }
+        }
+    }
+    free(statesQueue);
     return 0;
 }
 
-/* Returns the transition state.  If no such state exists, returns NULL. 
-   will be used in pm_addstring, pm_makeFSM, pm_fsm_search, pm_destroy functions. */
-pm_state_t *pm_goto_get(pm_state_t *state, unsigned char symbol)//check if the state has a "next state" with the current symbol
+//----- Search if a given String is contains the FSM labls
+slist_t *pm_fsm_search(pm_state_t *curState, unsigned char *string, size_t stringLength)
 {
-    if (state == NULL || state->_transitions == NULL || slist_head(state->_transitions) == NULL)
-        return NULL;
-    slist_node_t *tran1 = slist_head(state->_transitions);
-    pm_labeled_edge_t *sym = slist_data(tran1);
-    while (tran1 != NULL)
+    if(curState == NULL || string == NULL || strlen(string) != stringLength)
     {
-        if (sym->label == symbol)
-            return sym->state;
-        tran1 = slist_next(tran1);
-        if (tran1 != NULL)
-            sym = slist_data(tran1);
+        return NULL;
     }
-    return NULL;
-}
 
-/* Search for matches in a string of size n in the FSM. 
-   if there are no matches return empty list */
-slist_t *pm_fsm_search(pm_state_t *stateTemp, unsigned char *a, size_t size)
-{
-    if (a == NULL)
-        return NULL;
-    if (strlen(a) != size)
-        return NULL;
-    slist_t *matching = (slist_t *)malloc(sizeof(slist_t)); //list of matches
-    if (matching == NULL)
-        return NULL;
-    slist_init(matching);
-    pm_state_t *check; //get the result of "go to get"
-
-    pm_state_t *runner = stateTemp;
-
-    for (int i = 0; i < size; i++)
+    if(slist_head (curState->_transitions)==NULL || ((pm_labeled_edge_t *)slist_data(slist_head(curState->_transitions)))->state->fail == NULL)
     {
-        check = pm_goto_get(runner, a[i]);
-        if (check == NULL && runner == stateTemp)
-        {
-            continue;
-        }
-        while (check == NULL)
-        {
-            if (runner == NULL)
-                break;
-            runner = runner->fail;
-            check = pm_goto_get(runner, a[i]);
-        }
-        if (check != NULL)
-        {
-            runner = check;
-            if (runner->output != NULL && slist_head(runner->output) != NULL)
-            {
+    return NULL;
+    }
+    
+    slist_t *matchsList = (slist_t *)malloc(sizeof(slist_t));
+    if (matchsList == NULL)
+    {
+        return NULL;
+    }
+    slist_init(matchsList);
+    
+    slist_node_t *outputPtr;
 
-                slist_node_t *runner2 = slist_head(runner->output);
-                while (runner2 != NULL)
+    for (size_t i = 0; i < stringLength; i++)
+    {
+        while (pm_goto_get(curState, string[i]) == NULL)
+        {
+            if (curState->depth == 0)
+            {
+                break;
+            }
+            curState = curState->fail;
+        }
+
+        if (pm_goto_get(curState, string[i]) != NULL)
+        {
+            curState = pm_goto_get(curState, string[i]);
+            if (curState->output->size != 0)
+            {
+               outputPtr = slist_head(curState->output);
+                while (outputPtr != NULL)
                 {
-                    pm_match_t *temp2 = (pm_match_t *)malloc(sizeof(pm_match_t));
-                    if (temp2 == NULL)
+                    pm_match_t *matchToAdd = (pm_match_t *)malloc(sizeof(pm_match_t));
+                    if (matchToAdd == NULL)
+                    {
                         return NULL;
-                    temp2->start_pos = i - strlen(runner2->data) + 1;
-                    temp2->end_pos = i;
-                    temp2->pattern = runner2->data;
-                    temp2->fstate = runner;
-                    printf("Pattern: %s, starts at: %d, ends at: %d, last state = %d\n", temp2->pattern, temp2->start_pos, temp2->end_pos, temp2->fstate->id);
-                    int x = slist_append(matching, temp2);
-                    if (x == -1)
-                        return NULL;
-                    runner2 = slist_next(runner2);
+                    }
+                    matchToAdd->end_pos = i;
+                    matchToAdd->fstate = curState;
+                    matchToAdd->start_pos = i - strlen(slist_data(outputPtr)) + 1;
+                    matchToAdd->pattern = slist_data(outputPtr);
+                    slist_append(matchsList, matchToAdd);
+
+                    //----- print the matches
+                    printf("Pattern: %s, start at: %d, ends at: %d, last state = %d\n",
+                           matchToAdd->pattern, matchToAdd->start_pos, matchToAdd->end_pos, matchToAdd->fstate->id);
+
+                    outputPtr = slist_next(outputPtr);
                 }
             }
         }
     }
-    return matching;
+
+    return matchsList;
 }
 
-/* Destroys the fsm, deallocating memory. */
-void pm_destroy(pm_t *tree)
+//----- Destroy the FSM
+void pm_destroy(pm_t *fsm)
 {
-    if (tree == NULL || tree->zerostate == NULL)//no free needed . we don't have allocated pm_t
-        return;
-    else
+    if (fsm == NULL)
     {
-
-        slist_node_t *transition;
-        pm_state_t *temp = tree->zerostate;
-        pm_state_t *remove;
-        slist_t *des = (slist_t *)malloc(sizeof(slist_t));//temp list helps us free the states 
-        if (des == NULL)
-            return;
-        pm_labeled_edge_t *edge;
-        slist_init(des);
-        slist_append(des, temp);
-        while (slist_head(des) != NULL)
-        {
-            remove = slist_pop_first(des);
-            transition = slist_head(remove->_transitions);
-            while (transition != NULL)
-            {
-                edge = slist_data(transition);
-                slist_append(des, edge->state);
-                transition = slist_next(transition);
-            }
-            slist_destroy(remove->_transitions, SLIST_FREE_DATA);//free the transitions of a state
-            if (remove->_transitions != NULL)
-                free(remove->_transitions);
-            slist_destroy(remove->output, SLIST_LEAVE_DATA);//free the output of a state
-            if (remove->output != NULL)
-                free(remove->output);
-            free(remove);
-        }
-        slist_destroy(des, SLIST_FREE_DATA);//free the temp list in the end
-        free(des);
+        return;
     }
+
+//-----If the FSM just created and didn't add any string to it.
+    if (fsm->newstate == 1)
+    {
+        if (fsm->zerostate->_transitions != NULL)
+            free(fsm->zerostate->_transitions);
+        free(fsm->zerostate);
+        return;
+    }
+    slist_t *statesQueue = (slist_t *)malloc(sizeof(slist_t));
+    if (statesQueue == NULL)
+    {
+        return;
+    }
+
+    slist_init(statesQueue);
+
+    slist_append(statesQueue, fsm->zerostate);
+
+    pm_state_t *stateToFree;
+    slist_node_t *transitionsPtr = slist_head(fsm->zerostate->_transitions);
+
+    while (statesQueue->head != NULL)
+    {
+        stateToFree = slist_pop_first(statesQueue);
+        transitionsPtr = slist_head(stateToFree->_transitions);
+
+        while (transitionsPtr != NULL)
+        {
+            slist_append(statesQueue, ((pm_labeled_edge_t *)slist_data(transitionsPtr))->state);
+            transitionsPtr = slist_next(transitionsPtr);
+        }
+        
+        slist_destroy(stateToFree->_transitions, SLIST_FREE_DATA);
+        free(stateToFree->_transitions);
+
+        if (stateToFree->output != NULL)
+        {
+            slist_destroy(stateToFree->output, SLIST_LEAVE_DATA);
+            free(stateToFree->output);       
+        }
+
+        free(stateToFree);
+    }
+    free(statesQueue);
 }

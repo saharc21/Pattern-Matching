@@ -100,5 +100,4 @@ slist_t* pm_fsm_search(pm_state_t *,unsigned char *,size_t);
 /* Destroys the fsm, deallocating memory. */
 void pm_destroy(pm_t *);
 
-
 #endif
