@@ -75,7 +75,7 @@ int pm_goto_set(pm_state_t *from_state, unsigned char symbol, pm_state_t *to_sta
 
     //----- add the new state to the 'from_state' as a transition
     slist_append(from_state->_transitions, newLableToAdd);
-    printf("%d -> %c -> %d\n", from_state->id, symbol, to_state->id);
+    // printf("%d -> %c -> %d\n", from_state->id, symbol, to_state->id);
 
     return 0;
 }
@@ -113,7 +113,7 @@ int pm_addstring(pm_t *fsm, unsigned char *stringToAdd, size_t n)
             {
                 return -1;
             }
-            printf("Allocating state %d\n", fsm->newstate);
+            // printf("Allocating state %d\n", fsm->newstate);
             to_state->fail = NULL;
 
             //----- initilize new state parameters
@@ -191,8 +191,8 @@ int pm_makeFSM(pm_t *fsm)
                     if (pm_goto_get(fatherState->fail, ((pm_labeled_edge_t *)slist_data(statePtr))->label) != NULL)
                     {
                         ((pm_labeled_edge_t *)slist_data(statePtr))->state->fail = fsm -> zerostate;
-                        printf("Setting f(%d) = %d\n",
-                               ((pm_labeled_edge_t *)slist_data(statePtr))->state->id, ((pm_labeled_edge_t *)slist_data(statePtr))->state->fail->id);
+                        // printf("Setting f(%d) = %d\n",
+                            //    ((pm_labeled_edge_t *)slist_data(statePtr))->state->id, ((pm_labeled_edge_t *)slist_data(statePtr))->state->fail->id);
                         break;
                     }
                     if (fatherState->fail == fsm->zerostate)

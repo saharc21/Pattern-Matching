@@ -18,7 +18,7 @@ typedef unsigned int pm_int_t;
 typedef unsigned long size_t;
 #endif 
 
-#define PM_CHARACTERS 256
+#define PM_CHARACTERS 64000
 
 
 
