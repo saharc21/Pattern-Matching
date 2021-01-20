@@ -8,8 +8,8 @@
 
 #include "slist.h"
 
-#ifndef PATTERN_MATCHING_H
-#define PATTERN_MATCHING_H
+#ifndef PATTERN_MATCHING_AHO_H
+#define PATTERN_MATCHING_AHO_H
 
 typedef unsigned int pm_int_t;
 

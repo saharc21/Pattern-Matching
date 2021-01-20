@@ -3,7 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "slist.c"
-#include "pattern_matching.c"
+#include "pattern_matching_dfa.c"
 
 void print_pm(pm_t *pm);
 void print_state(pm_state_t *state, int tabs, int* is_need, int is_get);
@@ -11,87 +11,19 @@ void print_tabs(int tabs, int* is_need);
 unsigned char* shift(unsigned char* str, int len);
 void search_and_destroy(pm_t *pm, char *s);
 void _test1(pm_t *pm);
-void _test2(pm_t *pm);
-void _test3(pm_t *pm);
-void _test4(pm_t *pm);
-void _test5(pm_t *pm);
-void _test6(pm_t *pm);
-void _test7(pm_t *pm);
-void _test8(pm_t *pm);
-void _test9(pm_t *pm);
-void _test10(pm_t *pm);
-void _test11(pm_t *pm);
-void _test12(pm_t *pm);
-void _test13(pm_t *pm);
+
 
 int main(int argc, char* argv[]) {
     pm_t *pm = (pm_t*)malloc(sizeof(pm_t));
     if(!pm) {
         return -1;
     }
-    int _test = -1;
-    if(argc == 2) {
-        _test = atoi(argv[1]);
-        
-    }
-    else {
-        printf("this tester need get 1 argc:\ntest number\n");
-        printf("test 1 to 7: standard test\n");
-        printf("test 8 to 13: good luck\n");
-        printf("the output save in log.txt file at the same location\n");
-        printf("and comper with friends\n");
-        printf("run the program again and not just enter the test number\n");
-        printf("when test fail, search for _test[test number] function name\n");
-    }
-    
+     
     FILE *fp;
     fp = fopen("log.txt", "w+");
     dup2(fileno(fp), fileno(stdout));
     
-    switch (_test) {
-        case 1:
-            _test1(pm);
-            break;
-        case 2:
-            _test2(pm);
-            break;
-        case 3:
-            _test3(pm);
-            break;
-        case 4:
-            _test4(pm);
-            break;
-        case 5:
-            _test5(pm);
-            break;
-        case 6:
-            _test6(pm);
-            break;
-        case 7:
-            _test7(pm);
-            break;
-        case 8:
-            _test8(pm);
-            break;
-        case 9:
-            _test9(pm);
-            break;
-        case 10:
-            _test10(pm);
-            break;
-        case 11:
-            _test11(pm);
-            break;
-        case 12:
-            _test12(pm);
-            break;
-        case 13:
-            _test13(pm);
-            break;
-        default:
-            break;
-    }
-    
+    _test1(pm);
     
     free(pm);
     fclose(fp);
@@ -131,174 +63,6 @@ void _test1(pm_t *pm) {
     pm_addstring(pm, (unsigned char*)"zabcdefghijklmnopqrstuvwxy", 26);
     pm_makeFSM(pm);
     char *s = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxy";
-    search_and_destroy(pm, s);
-}
-
-void _test2(pm_t *pm) {
-    if(pm_init(pm) == -1){
-        printf("error init pm");
-        exit(-1);
-    }
-    pm_addstring(pm, (unsigned char*)"abcde", 5);
-    pm_addstring(pm, (unsigned char*)"bcde", 4);
-    pm_addstring(pm, (unsigned char*)"cde", 3);
-    pm_addstring(pm, (unsigned char*)"df", 2);
-    pm_makeFSM(pm);
-    char *s = "abcdf";
-    search_and_destroy(pm, s);
-}
-
-void _test3(pm_t *pm) {
-    if(pm_init(pm) == -1){
-        printf("error init pm");
-        exit(-1);
-    }
-    pm_addstring(pm, (unsigned char*)"a", 1);
-    pm_addstring(pm, (unsigned char*)"aa", 2);
-    pm_addstring(pm, (unsigned char*)"aaa", 3);
-    pm_addstring(pm, (unsigned char*)"aaaa", 4);
-    pm_makeFSM(pm);
-    char *s = "aaaaaaaa";
-    search_and_destroy(pm, s);
-}
-
-void _test4(pm_t *pm) {
-    if(pm_init(pm) == -1){
-        printf("error init pm");
-        exit(-1);
-    }
-    pm_addstring(pm, (unsigned char*)"bcd", 3);
-    pm_addstring(pm, (unsigned char*)"abcd", 4);
-    pm_addstring(pm, (unsigned char*)"bcde", 4);
-    pm_addstring(pm, (unsigned char*)"abcde", 5);
-    pm_makeFSM(pm);
-    char *s = "abcde";
-    search_and_destroy(pm, s);
-}
-
-void _test5(pm_t *pm) {
-    if(pm_init(pm) == -1){
-        printf("error init pm");
-        exit(-1);
-    }
-    pm_addstring(pm, (unsigned char*)"abcdef", 6);
-    pm_addstring(pm, (unsigned char*)"bcde", 4);
-    pm_addstring(pm, (unsigned char*)"cde", 3);
-    pm_addstring(pm, (unsigned char*)"de", 2);
-    pm_addstring(pm, (unsigned char*)"ef", 2);
-    pm_makeFSM(pm);
-    char *s = "abcdef";
-    search_and_destroy(pm, s);
-}
-
-void _test6(pm_t *pm) {
-    if(pm_init(pm) == -1){
-        printf("error init pm");
-        exit(-1);
-    }
-    pm_addstring(pm, (unsigned char*)"aba", 3);
-    pm_addstring(pm, (unsigned char*)"ba", 2);
-    pm_addstring(pm, (unsigned char*)"a", 1);
-    pm_makeFSM(pm);
-    char *s = "xyzabacdef";
-    search_and_destroy(pm, s);
-}
-
-void _test7(pm_t *pm) {
-    if(pm_init(pm) == -1){
-        printf("error init pm");
-        exit(-1);
-    }
-    pm_addstring(pm, (unsigned char*)"c", 1);
-    pm_addstring(pm, (unsigned char*)"bsnfsnf", 0);
-    pm_addstring(pm, (unsigned char*)"d", 1);
-    pm_makeFSM(pm);
-    char *s = "abcde";
-    search_and_destroy(pm, s);
-}
-
-// not doing pm_makeFSM
-void _test8(pm_t *pm) {
-    if(pm_init(pm) == -1){
-        printf("error init pm");
-        exit(-1);
-    }
-    pm_addstring(pm, (unsigned char*)"a", 1);
-    char *s = "aaaaaaaa";
-    search_and_destroy(pm, s);
-}
-
-// not doing pm_addstring
-void _test9(pm_t *pm) {
-    if(pm_init(pm) == -1){
-        printf("error init pm");
-        exit(-1);
-    }
-    pm_makeFSM(pm);
-    char *s = "aaaaaaaa";
-    search_and_destroy(pm, s);
-}
-
-// sending NULL everywhere
-void _test10(pm_t *pm) {
-    pm_init(NULL);
-    if(pm_init(pm) == -1){
-        printf("error init pm");
-        exit(-1);
-    }
-    pm_addstring(NULL, (unsigned char*)"a", 1);
-    pm_makeFSM(NULL);
-    char *s = "aaaaaaaa";
-    pm_fsm_search(NULL, (unsigned char*)s, strlen(s));
-    pm_destroy(pm);
-}
-
-//the sending string to pm_fsm_search is NULL
-void _test11(pm_t *pm) {
-    if(pm_init(pm) == -1){
-        printf("error init pm");
-        exit(-1);
-    }
-    pm_addstring(pm, (unsigned char*)"a", 1);
-    pm_addstring(pm, (unsigned char*)"aa", 2);
-    pm_addstring(pm, (unsigned char*)"aaa", 3);
-    pm_addstring(pm, (unsigned char*)"aaaa", 4);
-    pm_makeFSM(pm);
-    pm_fsm_search(pm->zerostate, NULL, 17);
-    pm_destroy(pm);
-}
-
-// add multi times the same pattern
-void _test12(pm_t *pm) {
-    if(pm_init(pm) == -1){
-        printf("error init pm");
-        exit(-1);
-    }
-    pm_addstring(pm, (unsigned char*)"bcd", 3);
-    pm_addstring(pm, (unsigned char*)"bcd", 3);
-    pm_addstring(pm, (unsigned char*)"bcd", 3);
-    pm_addstring(pm, (unsigned char*)"bcd", 3);
-    pm_addstring(pm, (unsigned char*)"b", 1);
-    pm_addstring(pm, (unsigned char*)"c", 1);
-    pm_addstring(pm, (unsigned char*)"d", 1);
-    pm_makeFSM(pm);
-    char *s = "abcde";
-    search_and_destroy(pm, s);
-}
-
-// pm_addstring, pm_makeFSM, pm_addstring, pm_makeFSM
-void _test13(pm_t *pm) {
-    if(pm_init(pm) == -1){
-        printf("error init pm");
-        exit(-1);
-    }
-    pm_addstring(pm, (unsigned char*)"bcd", 3);
-    pm_makeFSM(pm);
-    pm_addstring(pm, (unsigned char*)"b", 1);
-    pm_addstring(pm, (unsigned char*)"c", 1);
-    pm_addstring(pm, (unsigned char*)"d", 1);
-    pm_makeFSM(pm);
-    char *s = "abcdbcde";
     search_and_destroy(pm, s);
 }
 

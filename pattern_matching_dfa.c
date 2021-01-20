@@ -1,4 +1,4 @@
-#include "pattern_matching.h"
+#include "pattern_matching_dfa.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
