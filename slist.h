@@ -31,7 +31,6 @@ struct slist
 typedef struct slist slist_t;
 
 
-// you have to use these macros, do not use the inner variables of the list!!
 //! Macro to get the head node of a list l
 #define slist_head(l) l->head
 //! Macro to get the tail node of a list l
