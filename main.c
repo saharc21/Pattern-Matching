@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 #include <time.h>
 #include "slist.c"
 #include "pattern_matching_dfa.c"
@@ -13,73 +14,104 @@ unsigned char *shift(unsigned char *str, int len);
 void search_and_destroy(pm_t *pm, char *s);
 void _test1(pm_t *pm1);
 void _test2(pm_t *pm1, pm_t *pm2, pm_t *pm3, pm_t *pm4, pm_t *pm5, pm_t *pm6, pm_t *pm7, pm_t *pm8, pm_t *pm9, pm_t *pm10);
+void *myFunc(void *tid);
+
 
 int main(int argc, char *argv[])
 {
-    clock_t begin;
-    clock_t end;
-    
-    // begin = clock();
-    // pm_t *pm = (pm_t *)malloc(sizeof(pm_t));
+    pthread_t tids[5];
+    int id[5];
 
-    // if (!pm)
-    // {
-    //     return -1;
-    // }
-    // _test1(pm);
-    // free(pm);
-    // end = clock();
-
-    // printf("\n***************************************************************************\n");
-    // printf("****************************** Aho - Corasick *****************************\n");
-    // printf("***************************************************************************\n\n");
-    // printf("\nExecuted time is: %f ms. \n\n", ((double)(end - begin) / CLOCKS_PER_SEC) * 1000);
-
-    
-    begin = clock();
-
-    pm_t *pm1 = (pm_t *)malloc(sizeof(pm_t));
-    pm_t *pm2 = (pm_t *)malloc(sizeof(pm_t));
-    pm_t *pm3 = (pm_t *)malloc(sizeof(pm_t));
-    pm_t *pm4 = (pm_t *)malloc(sizeof(pm_t));
-    pm_t *pm5 = (pm_t *)malloc(sizeof(pm_t));
-    pm_t *pm6 = (pm_t *)malloc(sizeof(pm_t));
-    pm_t *pm7 = (pm_t *)malloc(sizeof(pm_t));
-    pm_t *pm8 = (pm_t *)malloc(sizeof(pm_t));
-    pm_t *pm9 = (pm_t *)malloc(sizeof(pm_t));
-    pm_t *pm10 = (pm_t *)malloc(sizeof(pm_t));
-
-    if (!pm1 || !pm2 || !pm3 || !pm4 || !pm5 || !pm6 || !pm7 || !pm8 || !pm9 || !pm10)
+    for (int i = 0; i < 5; i++)
     {
-        return -1;
+        id[i] = i;
+        pthread_create(&tids[i], NULL, myFunc, (void *)&id[i]);
     }
-
-    // FILE *fp;
-    // fp = fopen("log.txt", "w+");
-    // dup2(fileno(fp), fileno(stdout));
-
-    _test2(pm1, pm2, pm3, pm4, pm5, pm6, pm7, pm8, pm9, pm10);
-    free(pm1);
-    free(pm2);
-    free(pm3);
-    free(pm4);
-    free(pm5);
-    free(pm6);
-    free(pm7);
-    free(pm8);
-    free(pm9);
-    free(pm10);
-
-    // fclose(fp);
-    end = clock();
-
-    printf("\n***************************************************************************\n");
-    printf("************************** String Searching with DFA. *********************\n");
-    printf("***************************************************************************\n\n");   
-    printf("\nExecuted time is: %f ms. \n\n", ((double)(end - begin) / CLOCKS_PER_SEC) * 1000);
-
-    return 0;
+    for (int i = 0; i < 5; i++)
+    {
+        pthread_join(tids[i], NULL);
+    }
+    pthread_exit(NULL);
 }
+
+void *myFunc(void *tid)
+{
+    int *id = (int *)tid;
+    int i;
+
+    for (i = 0; i < 10000;i++)
+    {
+        printf("thread ID: %d\n", *id);
+    }
+    printf("thread %d works %d times\n", *id, i);
+}
+
+// int main(int argc, char *argv[])
+// {
+//     clock_t begin;
+//     clock_t end;
+
+//     // begin = clock();
+//     // pm_t *pm = (pm_t *)malloc(sizeof(pm_t));
+
+//     // if (!pm)
+//     // {
+//     //     return -1;
+//     // }
+//     // _test1(pm);
+//     // free(pm);
+//     // end = clock();
+
+//     // printf("\n***************************************************************************\n");
+//     // printf("****************************** Aho - Corasick *****************************\n");
+//     // printf("***************************************************************************\n\n");
+//     // printf("\nExecuted time is: %f ms. \n\n", ((double)(end - begin) / CLOCKS_PER_SEC) * 1000);
+
+//     begin = clock();
+
+//     pm_t *pm1 = (pm_t *)malloc(sizeof(pm_t));
+//     pm_t *pm2 = (pm_t *)malloc(sizeof(pm_t));
+//     pm_t *pm3 = (pm_t *)malloc(sizeof(pm_t));
+//     pm_t *pm4 = (pm_t *)malloc(sizeof(pm_t));
+//     pm_t *pm5 = (pm_t *)malloc(sizeof(pm_t));
+//     pm_t *pm6 = (pm_t *)malloc(sizeof(pm_t));
+//     pm_t *pm7 = (pm_t *)malloc(sizeof(pm_t));
+//     pm_t *pm8 = (pm_t *)malloc(sizeof(pm_t));
+//     pm_t *pm9 = (pm_t *)malloc(sizeof(pm_t));
+//     pm_t *pm10 = (pm_t *)malloc(sizeof(pm_t));
+
+//     if (!pm1 || !pm2 || !pm3 || !pm4 || !pm5 || !pm6 || !pm7 || !pm8 || !pm9 || !pm10)
+//     {
+//         return -1;
+//     }
+
+//     // FILE *fp;
+//     // fp = fopen("log.txt", "w+");
+//     // dup2(fileno(fp), fileno(stdout));
+
+//     _test2(pm1, pm2, pm3, pm4, pm5, pm6, pm7, pm8, pm9, pm10);
+//     free(pm1);
+//     free(pm2);
+//     free(pm3);
+//     free(pm4);
+//     free(pm5);
+//     free(pm6);
+//     free(pm7);
+//     free(pm8);
+//     free(pm9);
+//     free(pm10);
+
+//     // fclose(fp);
+//     end = clock();
+
+//     printf("\n***************************************************************************\n");
+//     printf("************************** String Searching with DFA. *********************\n");
+//     printf("***************************************************************************\n\n");
+//     printf("\nExecuted time is: %f ms. \n\n", ((double)(end - begin) / CLOCKS_PER_SEC) * 1000);
+
+//     return 0;
+// }
+
 void _test1(pm_t *pm1)
 {
     /* ------------------------------ Aho - Corasick ---------------------------------*/
@@ -125,14 +157,13 @@ void _test1(pm_t *pm1)
     fgets(s1, PM_CHARACTERS, (FILE *)fp);
     fclose(fp);
 
-
     search_and_destroy(pm1, s1);
     pm_destroy(pm1);
 }
 
 void _test2(pm_t *pm1, pm_t *pm2, pm_t *pm3, pm_t *pm4, pm_t *pm5, pm_t *pm6, pm_t *pm7, pm_t *pm8, pm_t *pm9, pm_t *pm10)
-    {
-         /* ------------------------------ DFA ---------------------------------*/
+{
+    /* ------------------------------ DFA ---------------------------------*/
 
     if (pm_init(pm1) == -1 || pm_init(pm2) == -1 || pm_init(pm3) == -1 || pm_init(pm4) == -1 || pm_init(pm5) == -1 || pm_init(pm6) == -1 || pm_init(pm7) == -1 || pm_init(pm8) == -1 || pm_init(pm9) == -1 || pm_init(pm10) == -1)
     {
@@ -163,11 +194,10 @@ void _test2(pm_t *pm1, pm_t *pm2, pm_t *pm3, pm_t *pm4, pm_t *pm5, pm_t *pm6, pm
     pm_makeFSM(pm10);
 
     FILE *fp;
-    char s1 [PM_CHARACTERS];
+    char s1[PM_CHARACTERS];
     fp = fopen("/home/student/Final Project/Pattern-Matching/chars_stream.txt", "r");
-    fgets(s1, PM_CHARACTERS, (FILE*)fp);
+    fgets(s1, PM_CHARACTERS, (FILE *)fp);
     fclose(fp);
-
 
     // char *s1 = "abcdjklmnopqrstuvwabcdefghijefghiklmnopqrstuvwxzabcdjklmnopqrstuefghivw";
 
@@ -191,8 +221,7 @@ void _test2(pm_t *pm1, pm_t *pm2, pm_t *pm3, pm_t *pm4, pm_t *pm5, pm_t *pm6, pm
     pm_destroy(pm9);
     search_and_destroy(pm10, s1);
     pm_destroy(pm10);
-    }
-
+}
 
 void search_and_destroy(pm_t *pm, char *s)
 {
