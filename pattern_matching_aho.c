@@ -211,6 +211,71 @@ int pm_makeFSM(pm_t *fsm)
     return 0;
 }
 
+int pm_makeFSM_dfa(pm_t *fsm)
+{
+    if (fsm == NULL)
+    {
+        return -1;
+    }
+
+    if (fsm->zerostate->_transitions == NULL)
+    {
+        return 0;
+    }
+
+    slist_t *statesQueue = (slist_t *)malloc(sizeof(slist_t));
+    if (statesQueue == NULL)
+    {
+        return -1;
+    }
+
+    slist_init(statesQueue);
+
+    //----- initilize the zerostate transitions failure states
+    slist_node_t *statePtr = slist_head(fsm->zerostate->_transitions);
+    while (statePtr != NULL)
+    {
+        slist_append(statesQueue, ((pm_labeled_edge_t *)slist_data(statePtr))->state);
+        ((pm_labeled_edge_t *)slist_data(statePtr))->state->fail = fsm->zerostate;
+        statePtr = slist_next(statePtr);
+    }
+
+    pm_state_t *fatherState;
+    //----- initilize the rest states failure states
+    while (statesQueue->head != NULL)
+    {
+        fatherState = slist_pop_first(statesQueue);
+        if (fatherState != NULL && fatherState->_transitions != NULL)
+        {
+            statePtr = slist_head(fatherState->_transitions);
+            while (statePtr != NULL)
+            {
+                slist_append(statesQueue, ((pm_labeled_edge_t *)slist_data(statePtr))->state);
+                while (fatherState != NULL)
+                {
+                    if (pm_goto_get(fatherState->fail, ((pm_labeled_edge_t *)slist_data(statePtr))->label) != NULL)
+                    {
+                        ((pm_labeled_edge_t *)slist_data(statePtr))->state->fail = fsm -> zerostate;
+                        // printf("Setting f(%d) = %d\n",
+                            //    ((pm_labeled_edge_t *)slist_data(statePtr))->state->id, ((pm_labeled_edge_t *)slist_data(statePtr))->state->fail->id);
+                        break;
+                    }
+                    if (fatherState->fail == fsm->zerostate)
+                    {
+                        ((pm_labeled_edge_t *)slist_data(statePtr))->state->fail = fsm->zerostate;
+                        break;
+                    }
+                    fatherState = fatherState->fail;
+                }
+                slist_append_list(((pm_labeled_edge_t *)slist_data(statePtr))->state->output, ((pm_labeled_edge_t *)slist_data(statePtr))->state->fail->output);
+                statePtr = slist_next(statePtr);
+            }
+        }
+    }
+    free(statesQueue);
+    return 0;
+}
+
 //----- Search if a given String is contains the FSM labls
 slist_t *pm_fsm_search(pm_state_t *curState, unsigned char *string, size_t stringLength)
 {

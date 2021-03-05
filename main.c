@@ -4,68 +4,84 @@
 #include <unistd.h>
 #include <time.h>
 #include "slist.c"
-#include "pattern_matching_aho.c"
+#include "pattern_matching_dfa.c"
 
 void print_pm(pm_t *pm);
 void print_state(pm_state_t *state, int tabs, int *is_need, int is_get);
 void print_tabs(int tabs, int *is_need);
 unsigned char *shift(unsigned char *str, int len);
 void search_and_destroy(pm_t *pm, char *s);
-// void _test1(pm_t *pm1, pm_t *pm2, pm_t *pm3, pm_t *pm4, pm_t *pm5, pm_t *pm6, pm_t *pm7, pm_t *pm8, pm_t *pm9, pm_t *pm10);
 void _test1(pm_t *pm1);
+void _test2(pm_t *pm1, pm_t *pm2, pm_t *pm3, pm_t *pm4, pm_t *pm5, pm_t *pm6, pm_t *pm7, pm_t *pm8, pm_t *pm9, pm_t *pm10);
 
 int main(int argc, char *argv[])
 {
-    clock_t begin = clock();
-    pm_t *pm1 = (pm_t *)malloc(sizeof(pm_t));
-    // pm_t *pm2 = (pm_t *)malloc(sizeof(pm_t));
-    // pm_t *pm3 = (pm_t *)malloc(sizeof(pm_t));
-    // pm_t *pm4 = (pm_t *)malloc(sizeof(pm_t));
-    // pm_t *pm5 = (pm_t *)malloc(sizeof(pm_t));
-    // pm_t *pm6 = (pm_t *)malloc(sizeof(pm_t));
-    // pm_t *pm7 = (pm_t *)malloc(sizeof(pm_t));
-    // pm_t *pm8 = (pm_t *)malloc(sizeof(pm_t));
-    // pm_t *pm9 = (pm_t *)malloc(sizeof(pm_t));
-    // pm_t *pm10 = (pm_t *)malloc(sizeof(pm_t));
+    clock_t begin;
+    clock_t end;
+    
+    // begin = clock();
+    // pm_t *pm = (pm_t *)malloc(sizeof(pm_t));
 
-    if (!pm1)
-    {
-        return -1;
-    }
-
-    // if (!pm1 || !pm2 || !pm3 || !pm4 || !pm5 || !pm6 || !pm7 || !pm8 || !pm9 || !pm10)
+    // if (!pm)
     // {
     //     return -1;
     // }
+    // _test1(pm);
+    // free(pm);
+    // end = clock();
+
+    // printf("\n***************************************************************************\n");
+    // printf("****************************** Aho - Corasick *****************************\n");
+    // printf("***************************************************************************\n\n");
+    // printf("\nExecuted time is: %f ms. \n\n", ((double)(end - begin) / CLOCKS_PER_SEC) * 1000);
+
+    
+    begin = clock();
+
+    pm_t *pm1 = (pm_t *)malloc(sizeof(pm_t));
+    pm_t *pm2 = (pm_t *)malloc(sizeof(pm_t));
+    pm_t *pm3 = (pm_t *)malloc(sizeof(pm_t));
+    pm_t *pm4 = (pm_t *)malloc(sizeof(pm_t));
+    pm_t *pm5 = (pm_t *)malloc(sizeof(pm_t));
+    pm_t *pm6 = (pm_t *)malloc(sizeof(pm_t));
+    pm_t *pm7 = (pm_t *)malloc(sizeof(pm_t));
+    pm_t *pm8 = (pm_t *)malloc(sizeof(pm_t));
+    pm_t *pm9 = (pm_t *)malloc(sizeof(pm_t));
+    pm_t *pm10 = (pm_t *)malloc(sizeof(pm_t));
+
+    if (!pm1 || !pm2 || !pm3 || !pm4 || !pm5 || !pm6 || !pm7 || !pm8 || !pm9 || !pm10)
+    {
+        return -1;
+    }
 
     // FILE *fp;
     // fp = fopen("log.txt", "w+");
     // dup2(fileno(fp), fileno(stdout));
 
-    _test1(pm1);
+    _test2(pm1, pm2, pm3, pm4, pm5, pm6, pm7, pm8, pm9, pm10);
     free(pm1);
-    // _test1(pm1, pm2, pm3, pm4, pm5, pm6, pm7, pm8, pm9, pm10);
-    // free(pm1);
-    // free(pm2);
-    // free(pm3);
-    // free(pm4);
-    // free(pm5);
-    // free(pm6);
-    // free(pm7);
-    // free(pm8);
-    // free(pm9);
-    // free(pm10);
+    free(pm2);
+    free(pm3);
+    free(pm4);
+    free(pm5);
+    free(pm6);
+    free(pm7);
+    free(pm8);
+    free(pm9);
+    free(pm10);
 
     // fclose(fp);
-    clock_t end = clock();
+    end = clock();
 
-    printf("Executed time is: %fms \n", ((double)(end - begin) / CLOCKS_PER_SEC) * 1000);
+    printf("\n***************************************************************************\n");
+    printf("************************** String Searching with DFA. *********************\n");
+    printf("***************************************************************************\n\n");   
+    printf("\nExecuted time is: %f ms. \n\n", ((double)(end - begin) / CLOCKS_PER_SEC) * 1000);
+
     return 0;
 }
 void _test1(pm_t *pm1)
 {
-    // void _test1(pm_t *pm1, pm_t *pm2, pm_t *pm3, pm_t *pm4, pm_t *pm5, pm_t *pm6, pm_t *pm7, pm_t *pm8, pm_t *pm9, pm_t *pm10)
-    // {
     /* ------------------------------ Aho - Corasick ---------------------------------*/
     if (pm_init(pm1) == -1)
     {
@@ -112,8 +128,11 @@ void _test1(pm_t *pm1)
 
     search_and_destroy(pm1, s1);
     pm_destroy(pm1);
+}
 
-    /* ------------------------------ DFA ---------------------------------
+void _test2(pm_t *pm1, pm_t *pm2, pm_t *pm3, pm_t *pm4, pm_t *pm5, pm_t *pm6, pm_t *pm7, pm_t *pm8, pm_t *pm9, pm_t *pm10)
+    {
+         /* ------------------------------ DFA ---------------------------------*/
 
     if (pm_init(pm1) == -1 || pm_init(pm2) == -1 || pm_init(pm3) == -1 || pm_init(pm4) == -1 || pm_init(pm5) == -1 || pm_init(pm6) == -1 || pm_init(pm7) == -1 || pm_init(pm8) == -1 || pm_init(pm9) == -1 || pm_init(pm10) == -1)
     {
@@ -121,7 +140,7 @@ void _test1(pm_t *pm1)
         exit(-1);
     }
 
-    // 1-4 non pattern , 5-7 half patterns, 8-10 full pattern
+    // 1-3 non pattern , 4-6 half patterns, 7-10 full pattern
     pm_addstring(pm1, (unsigned char *)"DR5HY@yLcG*6GD7sXf1paMwfLiD&Gdub98QW0FzqpWjEHxMQZ0kJoZo#hJVJ9QGD3VdtIadTp4me*sfAzT3NjL0$4L2FC6NzmDd6mhtyW04o@*qO#le31L^MO$X#CpFYxHSegmPDjiCf8R^cmjtARILA*Z^e!n&pPEC&WKKNHO7I4P6XPA0&#75RJ7ghWsHXz^r3vSh@OzJK#jqaZBvz9x4EF*$hlfcrykrKdLgio7AaxLiuDD805i@4&s4WWusG7fsf5iNllmMrVkb7RtzSU@fZo1bLVaceLA#CkuWSpvaD0b#ZGwkcTesehS5UwKUObzILks#sdUJDBdadWpgP&lanjk^CbqjbumPvz2chvCa&Sc120z5p60TEDBc9esY3vbtq8w5j^M0K$$UYZB2NMAUjJ*kK^1SoX5f03yxAh0#!R$92Ui&88zhwxsnq2evaygzksj##w1Sx^jvknA&Vyba^Dt1j8CM", 479);
     pm_makeFSM(pm1);
     pm_addstring(pm2, (unsigned char *)"#^1wds5KDaplo&!mEFt7Xak&SFpa0fNP8xZwdmRXS7tZ2!B9P4na&yHXT*JAsuGUmeYypacsvkxnkUDgC*GWmUBf5WKT8E2k!UF@pK3g86ansmrmOfspzeSGjJmjfmg9#*pOYs@b^cGZLycrtv@*wrxCgeVvb&4v3mZwRwDgdEPZMQX0lyANM23HL3oWm#dm2nS6A!OAGq$QjoA9*DK&*ffQ2&wZxJf06Vxck1om!ccKe7qpqZk5iJECurt!3s6EpTPdpgxeKAZLlR4Bt1V#5ZBfX4tW0^3I0zlJvomrNOiOKi!vK^8lX36JkuJCzhrvAKk#aC^RtQAtS$qK^A*30I^$Ed3KZ82rgwG7z4mswABIzOH*3bm!6C@dCx", 378);
@@ -172,8 +191,8 @@ void _test1(pm_t *pm1)
     pm_destroy(pm9);
     search_and_destroy(pm10, s1);
     pm_destroy(pm10);
-*/
-}
+    }
+
 
 void search_and_destroy(pm_t *pm, char *s)
 {
