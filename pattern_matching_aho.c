@@ -304,8 +304,13 @@ slist_t *pm_fsm_search(pm_state_t *curState, unsigned char *string, size_t strin
         {
             if (curState->depth == 0)
             {
-                break;
+                return NULL;
             }
+            if (curState->fail->depth == 0)
+            {
+                    return NULL;
+            }
+            
             curState = curState->fail;
         }
 
