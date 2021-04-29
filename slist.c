@@ -150,4 +150,5 @@ int slist_append_list(slist_t *source, slist_t *destanation)//connect one list t
         }
         return 0;
     }
+    return -1;
 }

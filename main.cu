@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <time.h>
+#include <cuda_runtime.h>
 #include "slist.c"
 #include "pattern_matching_aho.c"
 
@@ -66,15 +67,16 @@ int main(int argc, char *argv[]) // ********************* Aho - parallel *******
     {
         argus[i] = (args_t *)malloc(sizeof(args_t));
         argus[i]->pm = pm;
-        argus[i]->data = &s1[i];
+        argus[i]->data = (unsigned char *)&s1[i];
 
         pthread_create(&tids[i], NULL, myFunc, (void *)argus[i]);
     }
     for (int i = 0; i < NUM_OF_THREADS; i++)
     {
         pthread_join(tids[i], NULL);
-        free(tids);
     }
+        free(tids);
+
 
     end = clock();
     fclose(fp);
@@ -84,7 +86,7 @@ int main(int argc, char *argv[]) // ********************* Aho - parallel *******
 void *myFunc(void *arguments)
 {
     args_t *argus = (args_t *)arguments;
-    search_and_destroy(argus->pm, argus->data);
+    search_and_destroy(argus->pm, (char *)argus->data);
     // pm_destroy(argus->pm);
     argus->data = NULL;
     pthread_exit(NULL);

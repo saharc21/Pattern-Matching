@@ -34,7 +34,7 @@ int pm_init(pm_t *fsm)
     return 0;
 }
 
-//----- Return the destination state if there is an edge that connect the source to the destination state with specific symbol 
+//----- Return the destination state if there is an edge that connect the source to the destination state with specific symbol
 pm_state_t *pm_goto_get(pm_state_t *state, unsigned char symbol)
 {
     int findIndication = 0; // '0' symbol not found, '1' found.
@@ -61,7 +61,7 @@ pm_state_t *pm_goto_get(pm_state_t *state, unsigned char symbol)
     }
 }
 
-//----- Set new edge that connect two states with symbol 
+//----- Set new edge that connect two states with symbol
 int pm_goto_set(pm_state_t *from_state, unsigned char symbol, pm_state_t *to_state)
 {
     //----- initilize the new lable
@@ -83,7 +83,7 @@ int pm_goto_set(pm_state_t *from_state, unsigned char symbol, pm_state_t *to_sta
 //----- Add new lable (if not exists) to the FSM
 int pm_addstring(pm_t *fsm, unsigned char *stringToAdd, size_t n)
 {
-    if (fsm == NULL || (fsm->newstate + n) > PM_CHARACTERS || stringToAdd == NULL || n <= 0 || strlen(stringToAdd) != n)
+    if (fsm == NULL || (fsm->newstate + n) > PM_CHARACTERS || stringToAdd == NULL || n <= 0 || strlen((const char *)stringToAdd) != n)
     {
         return -1;
     }
@@ -143,6 +143,7 @@ int pm_addstring(pm_t *fsm, unsigned char *stringToAdd, size_t n)
             statePtr = to_state;
         }
     }
+    return -1;
 }
 
 //----- Initilaize all FSM state's failure state
@@ -153,7 +154,8 @@ int pm_makeFSM(pm_t *fsm)
         return -1;
     }
 
-    if(fsm->zerostate->_transitions == NULL){
+    if (fsm->zerostate->_transitions == NULL)
+    {
         return 0;
     }
 
@@ -178,7 +180,7 @@ int pm_makeFSM(pm_t *fsm)
     //----- initilize the rest states failure states
     while (statesQueue->head != NULL)
     {
-        fatherState = slist_pop_first(statesQueue);
+        fatherState = (pm_state_t *)slist_pop_first(statesQueue);
         if (fatherState != NULL && fatherState->_transitions != NULL)
         {
             statePtr = slist_head(fatherState->_transitions);
@@ -244,7 +246,7 @@ int pm_makeFSM_dfa(pm_t *fsm)
     //----- initilize the rest states failure states
     while (statesQueue->head != NULL)
     {
-        fatherState = slist_pop_first(statesQueue);
+        fatherState = (pm_state_t *)slist_pop_first(statesQueue);
         if (fatherState != NULL && fatherState->_transitions != NULL)
         {
             statePtr = slist_head(fatherState->_transitions);
@@ -255,9 +257,9 @@ int pm_makeFSM_dfa(pm_t *fsm)
                 {
                     if (pm_goto_get(fatherState->fail, ((pm_labeled_edge_t *)slist_data(statePtr))->label) != NULL)
                     {
-                        ((pm_labeled_edge_t *)slist_data(statePtr))->state->fail = fsm -> zerostate;
+                        ((pm_labeled_edge_t *)slist_data(statePtr))->state->fail = fsm->zerostate;
                         // printf("Setting f(%d) = %d\n",
-                            //    ((pm_labeled_edge_t *)slist_data(statePtr))->state->id, ((pm_labeled_edge_t *)slist_data(statePtr))->state->fail->id);
+                        //    ((pm_labeled_edge_t *)slist_data(statePtr))->state->id, ((pm_labeled_edge_t *)slist_data(statePtr))->state->fail->id);
                         break;
                     }
                     if (fatherState->fail == fsm->zerostate)
@@ -279,23 +281,23 @@ int pm_makeFSM_dfa(pm_t *fsm)
 //----- Search if a given String is contains the FSM labls
 slist_t *pm_fsm_search(pm_state_t *curState, unsigned char *string, size_t stringLength)
 {
-    if(curState == NULL || string == NULL || strlen(string) != stringLength)
+    if (curState == NULL || string == NULL || strlen((const char *)string) != stringLength)
     {
         return NULL;
     }
 
-    if(slist_head (curState->_transitions)==NULL || ((pm_labeled_edge_t *)slist_data(slist_head(curState->_transitions)))->state->fail == NULL)
+    if (slist_head(curState->_transitions) == NULL || ((pm_labeled_edge_t *)slist_data(slist_head(curState->_transitions)))->state->fail == NULL)
     {
-    return NULL;
+        return NULL;
     }
-    
+
     slist_t *matchsList = (slist_t *)malloc(sizeof(slist_t));
     if (matchsList == NULL)
     {
         return NULL;
     }
     slist_init(matchsList);
-    
+
     slist_node_t *outputPtr;
 
     for (size_t i = 0; i < stringLength; i++)
@@ -308,9 +310,9 @@ slist_t *pm_fsm_search(pm_state_t *curState, unsigned char *string, size_t strin
             }
             if (curState->fail->depth == 0)
             {
-                    return NULL;
+                return NULL;
             }
-            
+
             curState = curState->fail;
         }
 
@@ -319,7 +321,7 @@ slist_t *pm_fsm_search(pm_state_t *curState, unsigned char *string, size_t strin
             curState = pm_goto_get(curState, string[i]);
             if (curState->output->size != 0)
             {
-               outputPtr = slist_head(curState->output);
+                outputPtr = slist_head(curState->output);
                 while (outputPtr != NULL)
                 {
                     pm_match_t *matchToAdd = (pm_match_t *)malloc(sizeof(pm_match_t));
@@ -329,8 +331,8 @@ slist_t *pm_fsm_search(pm_state_t *curState, unsigned char *string, size_t strin
                     }
                     matchToAdd->end_pos = i;
                     matchToAdd->fstate = curState;
-                    matchToAdd->start_pos = i - strlen(slist_data(outputPtr)) + 1;
-                    matchToAdd->pattern = slist_data(outputPtr);
+                    matchToAdd->start_pos = i - strlen((const char *)slist_data(outputPtr)) + 1;
+                    matchToAdd->pattern = (char *)slist_data(outputPtr);
                     slist_append(matchsList, matchToAdd);
 
                     //----- print the matches
@@ -354,7 +356,7 @@ void pm_destroy(pm_t *fsm)
         return;
     }
 
-//-----If the FSM just created and didn't add any string to it.
+    //-----If the FSM just created and didn't add any string to it.
     if (fsm->newstate == 1)
     {
         if (fsm->zerostate->_transitions != NULL)
@@ -377,7 +379,7 @@ void pm_destroy(pm_t *fsm)
 
     while (statesQueue->head != NULL)
     {
-        stateToFree = slist_pop_first(statesQueue);
+        stateToFree = (pm_state_t *)slist_pop_first(statesQueue);
         transitionsPtr = slist_head(stateToFree->_transitions);
 
         while (transitionsPtr != NULL)
@@ -385,14 +387,14 @@ void pm_destroy(pm_t *fsm)
             slist_append(statesQueue, ((pm_labeled_edge_t *)slist_data(transitionsPtr))->state);
             transitionsPtr = slist_next(transitionsPtr);
         }
-        
+
         slist_destroy(stateToFree->_transitions, SLIST_FREE_DATA);
         free(stateToFree->_transitions);
 
         if (stateToFree->output != NULL)
         {
             slist_destroy(stateToFree->output, SLIST_LEAVE_DATA);
-            free(stateToFree->output);       
+            free(stateToFree->output);
         }
 
         free(stateToFree);
