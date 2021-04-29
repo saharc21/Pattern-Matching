@@ -7,6 +7,7 @@
 #include "slist.c"
 #include "pattern_matching_aho.c"
 
+
 void print_pm(pm_t *pm);
 void print_state(pm_state_t *state, int tabs, int *is_need, int is_get);
 void print_tabs(int tabs, int *is_need);
@@ -22,12 +23,13 @@ char s1[PM_CHARACTERS];
 int main(int argc, char *argv[]) // ********************* Aho - parallel ***********************
 {
     FILE *fp;
-    fp = fopen("/home/student/Final Project/Pattern-Matching/chars_stream.txt", "r");
+    fp = fopen("/home/jceproject/Desktop/Final Project/Pattern-Matching/chars_stream.txt", "r");
     fgets(s1, PM_CHARACTERS, (FILE *)fp);
     int numOfChars = strlen(strtok(s1, "\0"));
 
     int NUM_OF_THREADS = numOfChars - 113;
-    pthread_t tids[NUM_OF_THREADS];
+
+    pthread_t *tids = (pthread_t *)malloc(sizeof(pthread_t) * NUM_OF_THREADS);
 
     pm_t *pm = (pm_t *)malloc(sizeof(pm_t));
 
@@ -53,13 +55,12 @@ int main(int argc, char *argv[]) // ********************* Aho - parallel *******
     pm_addstring(pm, (unsigned char *)"mjXnO5lUQKGB1RnpYMXq72alSUcZLthkcvCYuwmeTfThqjVbe0PzN6hId9a6u9DGxL37pbPcyBycDYWZmhwPF6CdQzyNxlAhLyjU0FG9jYICzxsGt", 113);
     pm_addstring(pm, (unsigned char *)"kDR1XpjpFrgtED8y24YD76zgJz5hIAEfRJylpD7wO8oHE0xyjPUMTcqEabuZtvnUNgfZZjclcPlwOzJALTQQ1KzlGzfrGxKnbxRYiCw0IXgfdgAINS9gaNTVVT2AYIfxG5oiTqSFGNe8mx2inlzPHJSdZLx7Gh0Rmncf5MESgPxdkVKHxS0dGHEx9WIbKiimQMy5LHl2RwRTMWybSy8X1PYiXcAGw1x9HQ7QjavVkjBBLt8GnbeulhV0dN2wTO9gnoIjhulLzRltiHx57vafQM4fOalysOUqfhUppN494uD482cWkuNq08bAaNjaNq19gL9hI3AJNXzFl7KH1f6h3xd0qGuunOQv5N25U9X676qRm3hVlkgra8EVKRMW2vbCO9SE55py9k7Ehg6lrnPy0WayZfJly2ZlgwtFqVFR7dBXYklRZcru3RQdVDFOvObNJmJPx0A82LC1Q0bqpAzuSQQ2mOWKhg6bEF0q2tWSB3d0I9m8I97MoCKDWDfIHBrpHLW1GbDJJdZCePakRSn6ityD0reUreEv3Nk3oKGY3mhVRqvwq1K374D80HBudTsYNP6xa1yJtANEus3YnqI38AQ9eu46q1xfmYfY28V9mvOviAnj3G9nGRkdIzO6CkNIPWZ7T0TTlEmftZKe1MIXZYW2AnIXaSn5YCmzT6rYqIpT0lO4TGTX8Nu2Aj8GDbhAj0Zs0cnxS5b3FSylzp8MHuJsdyNxgMGTeNtGloWQwvfhHdCsj9rEbchclaBriYZtx7rzaxbIB", 777);
     pm_makeFSM(pm);
-    
+
     args_t **argus = (args_t **)malloc(NUM_OF_THREADS * sizeof(args_t *));
 
     clock_t begin;
     clock_t end;
     begin = clock();
-
 
     for (int i = 0; i < NUM_OF_THREADS; i++)
     {
@@ -72,6 +73,7 @@ int main(int argc, char *argv[]) // ********************* Aho - parallel *******
     for (int i = 0; i < NUM_OF_THREADS; i++)
     {
         pthread_join(tids[i], NULL);
+        free(tids);
     }
 
     end = clock();
@@ -85,6 +87,7 @@ void *myFunc(void *arguments)
     search_and_destroy(argus->pm, argus->data);
     // pm_destroy(argus->pm);
     argus->data = NULL;
+    pthread_exit(NULL);
 }
 
 // int main(int argc, char *argv[])   ********************* DFA - parallel ***********************
