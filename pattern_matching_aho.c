@@ -35,7 +35,7 @@ int pm_init(pm_t *fsm)
 }
 
 //----- Return the destination state if there is an edge that connect the source to the destination state with specific symbol
-pm_state_t *pm_goto_get(pm_state_t *state, unsigned char symbol)
+__global__ pm_state_t *pm_goto_get(pm_state_t *state, unsigned char symbol)
 {
     int findIndication = 0; // '0' symbol not found, '1' found.
     slist_node_t *transitionPtr = slist_head(state->_transitions);
@@ -279,7 +279,7 @@ int pm_makeFSM_dfa(pm_t *fsm)
 }
 
 //----- Search if a given String is contains the FSM labls
-slist_t *pm_fsm_search(pm_state_t *curState, unsigned char *string, size_t stringLength)
+__global__ slist_t *pm_fsm_search(pm_state_t *curState, unsigned char *string, size_t stringLength)
 {
     if (curState == NULL || string == NULL || strlen((const char *)string) != stringLength)
     {
@@ -316,9 +316,9 @@ slist_t *pm_fsm_search(pm_state_t *curState, unsigned char *string, size_t strin
             curState = curState->fail;
         }
 
-        if (pm_goto_get(curState, string[i]) != NULL)
+        if (pm_goto_get<<< 1 , 1>>>(curState, string[i]) != NULL)
         {
-            curState = pm_goto_get(curState, string[i]);
+            curState = pm_goto_get<<< 1 , 1>>>(curState, string[i]);
             if (curState->output->size != 0)
             {
                 outputPtr = slist_head(curState->output);
@@ -333,7 +333,7 @@ slist_t *pm_fsm_search(pm_state_t *curState, unsigned char *string, size_t strin
                     matchToAdd->fstate = curState;
                     matchToAdd->start_pos = i - strlen((const char *)slist_data(outputPtr)) + 1;
                     matchToAdd->pattern = (char *)slist_data(outputPtr);
-                    slist_append(matchsList, matchToAdd);
+                    slist_append<<< 1 , 1>>>(matchsList, matchToAdd);
 
                     //----- print the matches
                     printf("Pattern: %s, start at: %d, ends at: %d, last state = %d\n",
@@ -370,9 +370,9 @@ void pm_destroy(pm_t *fsm)
         return;
     }
 
-    slist_init(statesQueue);
+    slist_init<<< 1 , 1>>>(statesQueue);
 
-    slist_append(statesQueue, fsm->zerostate);
+    slist_append<<< 1 , 1>>>(statesQueue, fsm->zerostate);
 
     pm_state_t *stateToFree;
     slist_node_t *transitionsPtr = slist_head(fsm->zerostate->_transitions);
@@ -384,7 +384,7 @@ void pm_destroy(pm_t *fsm)
 
         while (transitionsPtr != NULL)
         {
-            slist_append(statesQueue, ((pm_labeled_edge_t *)slist_data(transitionsPtr))->state);
+            slist_append<<< 1 , 1>>>(statesQueue, ((pm_labeled_edge_t *)slist_data(transitionsPtr))->state);
             transitionsPtr = slist_next(transitionsPtr);
         }
 

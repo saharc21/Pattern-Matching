@@ -13,15 +13,13 @@ void print_pm(pm_t *pm);
 void print_state(pm_state_t *state, int tabs, int *is_need, int is_get);
 void print_tabs(int tabs, int *is_need);
 unsigned char *shift(unsigned char *str, int len);
-__global__ void search_patterns(pm_t *pm,  char *s,int lenOfS, slist_t *list);
-void cleanup_destroy(slist_t *list);
+void search_and_destroy(pm_t *pm, char *s);
 void _test1(pm_t *pm1);
 void _test2(pm_t *pm1, pm_t *pm2, pm_t *pm3, pm_t *pm4, pm_t *pm5, pm_t *pm6, pm_t *pm7, pm_t *pm8, pm_t *pm9, pm_t *pm10);
-// void *myFunc(void *pm);
+void *myFunc(void *pm);
 int pms_init(int NUM_OF_THREADS, pm_t **pms);
 
 char s1[PM_CHARACTERS];
-__device__ int NUM_OF_THREADS;
 
 int main(int argc, char *argv[]) // ********************* Aho - parallel ***********************
 {
@@ -30,7 +28,7 @@ int main(int argc, char *argv[]) // ********************* Aho - parallel *******
     fgets(s1, PM_CHARACTERS, (FILE *)fp);
     int numOfChars = strlen(strtok(s1, "\0"));
 
-    NUM_OF_THREADS = numOfChars - 113;
+    int NUM_OF_THREADS = numOfChars - 113;
 
     pthread_t *tids = (pthread_t *)malloc(sizeof(pthread_t) * NUM_OF_THREADS);
 
@@ -65,34 +63,19 @@ int main(int argc, char *argv[]) // ********************* Aho - parallel *******
     clock_t end;
     begin = clock();
 
-    pm_t * cu_pm;
-    cudaMallocManaged(&cu_pm, sizeof(pm_t));
-    char * cu_s1;
-    cudaMallocManaged(&cu_s1, (numOfChars+1)*sizeof(char));
-    cudaMemcpy(cu_pm, pm,sizeof(pm),cudaMemcpyHostToDevice);
-    cudaMemcpy(cu_s1, s1,sizeof(s1),cudaMemcpyHostToDevice);
-    slist_t *list = NULL;
-    int len = strlen(s1);
-    
-    search_patterns<<< 1, NUM_OF_THREADS>>>(cu_pm, cu_s1, len,list);
+    for (int i = 0; i < NUM_OF_THREADS; i++)
+    {
+        argus[i] = (args_t *)malloc(sizeof(args_t));
+        argus[i]->pm = pm;
+        argus[i]->data = (unsigned char *)&s1[i];
 
-    cudaFree(cu_pm);
-    cudaFree(cu_s1);
-    
-    cleanup_destroy(list);
-    // for (int i = 0; i < NUM_OF_THREADS; i++)
-    // {
-    //     argus[i] = (args_t *)malloc(sizeof(args_t));
-    //     argus[i]->pm = pm;
-    //     argus[i]->data = (unsigned char *)&s1[i];
-
-    //     pthread_create(&tids[i], NULL, myFunc, (void *)argus[i]);
-    // }
-    // for (int i = 0; i < NUM_OF_THREADS; i++)
-    // {
-    //     pthread_join(tids[i], NULL);
-    // }
-    //     free(tids);
+        pthread_create(&tids[i], NULL, myFunc, (void *)argus[i]);
+    }
+    for (int i = 0; i < NUM_OF_THREADS; i++)
+    {
+        pthread_join(tids[i], NULL);
+    }
+        free(tids);
 
 
     end = clock();
@@ -100,15 +83,14 @@ int main(int argc, char *argv[]) // ********************* Aho - parallel *******
     printf("\nExecuted time is: %f ms. \n\n", ((double)(end - begin) / CLOCKS_PER_SEC) * 1000);
 }
 
-
-// void *myFunc(void *arguments)
-// {
-//     args_t *argus = (args_t *)arguments;
-//     //search_and_destroy(argus->pm, (char *)argus->data);
-//     // pm_destroy(argus->pm);
-//     argus->data = NULL;
-//     pthread_exit(NULL);
-// }
+void *myFunc(void *arguments)
+{
+    args_t *argus = (args_t *)arguments;
+    search_and_destroy(argus->pm, (char *)argus->data);
+    // pm_destroy(argus->pm);
+    argus->data = NULL;
+    pthread_exit(NULL);
+}
 
 // int main(int argc, char *argv[])   ********************* DFA - parallel ***********************
 // {
@@ -318,7 +300,7 @@ void _test1(pm_t *pm1)
     fgets(s1, PM_CHARACTERS, (FILE *)fp);
     fclose(fp);
 
-    //search_and_destroy(pm1, s1);
+    search_and_destroy(pm1, s1);
     pm_destroy(pm1);
 }
 
@@ -362,40 +344,34 @@ void _test2(pm_t *pm1, pm_t *pm2, pm_t *pm3, pm_t *pm4, pm_t *pm5, pm_t *pm6, pm
 
     // char *s1 = "abcdjklmnopqrstuvwabcdefghijefghiklmnopqrstuvwxzabcdjklmnopqrstuefghivw";
 
-    //search_and_destroy(pm1, s1);
+    search_and_destroy(pm1, s1);
     pm_destroy(pm1);
-    //search_and_destroy(pm2, s1);
+    search_and_destroy(pm2, s1);
     pm_destroy(pm2);
-    //search_and_destroy(pm3, s1);
+    search_and_destroy(pm3, s1);
     pm_destroy(pm3);
-    //search_and_destroy(pm4, s1);
+    search_and_destroy(pm4, s1);
     pm_destroy(pm4);
-    //search_and_destroy(pm5, s1);
+    search_and_destroy(pm5, s1);
     pm_destroy(pm5);
-    //search_and_destroy(pm6, s1);
+    search_and_destroy(pm6, s1);
     pm_destroy(pm6);
-    //search_and_destroy(pm7, s1);
+    search_and_destroy(pm7, s1);
     pm_destroy(pm7);
-    //search_and_destroy(pm8, s1);
+    search_and_destroy(pm8, s1);
     pm_destroy(pm8);
-    //search_and_destroy(pm9, s1);
+    search_and_destroy(pm9, s1);
     pm_destroy(pm9);
-    //search_and_destroy(pm10, s1);
+    search_and_destroy(pm10, s1);
     pm_destroy(pm10);
 }
 
-__global__ void search_patterns(pm_t *pm,  char *s, int lenOfS, slist_t *list)
+void search_and_destroy(pm_t *pm, char *s)
 {
-    // list = pm_fsm_search(pm->zerostate, (unsigned char *)s[threadIdx.x], strlen(s)-threadIdx.x);
-    pm_fsm_search<<< 1, NUM_OF_THREADS>>>(pm->zerostate, (unsigned char *)s[threadIdx.x], lenOfS-threadIdx.x);
-
-}
-
-void cleanup_destroy( slist_t *list ){
+    slist_t *list = pm_fsm_search(pm->zerostate, (unsigned char *)s, strlen(s));
     slist_destroy(list, SLIST_FREE_DATA);
     free(list);
     // pm_destroy(pm);
-
 }
 
 unsigned char *shift(unsigned char *str, int len)

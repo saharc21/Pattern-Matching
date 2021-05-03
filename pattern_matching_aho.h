@@ -86,12 +86,12 @@ int pm_goto_set(pm_state_t *from_state,
 
 /* Returns the transition state.  If no such state exists, returns NULL. 
    will be used in pm_addstring, pm_makeFSM, pm_fsm_search, pm_destroy functions. */
-pm_state_t *pm_goto_get(pm_state_t *state,
+__global__ pm_state_t *pm_goto_get(pm_state_t *state,
 						unsigned char symbol);
 
 /* Search for matches in a string of size n in the FSM. 
    if there are no matches return empty list */
-slist_t *pm_fsm_search(pm_state_t *, unsigned char *, size_t);
+__global__ slist_t *pm_fsm_search(pm_state_t *, unsigned char *, size_t);
 
 /* Destroys the fsm, deallocating memory. */
 void pm_destroy(pm_t *);

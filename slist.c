@@ -5,7 +5,7 @@
 
 /** Initialize a single linked list
 	\param list - the list to initialize */
-void slist_init(slist_t *list)
+__global__ void slist_init(slist_t *list)
 { //init the first list
     if (list == NULL)
     {
@@ -64,7 +64,7 @@ void *slist_pop_first(slist_t *list) //if there is information in first data, re
 	\param list - a pointer to a list
 	\param data - the data to place in the list
 	\return 0 on success, or -1 on failure */
-int slist_append(slist_t *list, void *data) //create new node with new data ("void * data") and add it to the exist list from the 'tail side'
+__global__ int slist_append(slist_t *list, void *data) //create new node with new data ("void * data") and add it to the exist list from the 'tail side'
 {
     if (data == NULL || list == NULL ) 
         return -1;

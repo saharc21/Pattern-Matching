@@ -47,7 +47,7 @@ typedef enum { SLIST_LEAVE_DATA = 0, SLIST_FREE_DATA } slist_destroy_t;
 
 /** Initialize a single linked list
 	\param list - the list to initialize */
-void slist_init(slist_t *);
+__global__ void slist_init(slist_t *);
 
 /** Destroy and de-allocate the memory hold by a list
 	\param list - a pointer to an existing list
@@ -63,7 +63,7 @@ void *slist_pop_first(slist_t *);
 	\param list - a pointer to a list
 	\param data - the data to place in the list
 	\return 0 on success, or -1 on failure */
-int slist_append(slist_t *,void *);
+__global__ int slist_append(slist_t *,void *);
 
 /** Prepend data to list (add as first node of the list)
 	\param list - a pointer to list
