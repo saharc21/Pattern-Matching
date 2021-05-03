@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 //----- Initilaize the FSM veriables
 int pm_init(pm_t *fsm)
 {
@@ -296,13 +297,13 @@ __global__ slist_t *pm_fsm_search(pm_state_t *curState, unsigned char *string, s
     {
         return NULL;
     }
-    slist_init(matchsList);
+    slist_init<<< 1 , 1>>>(matchsList);
 
     slist_node_t *outputPtr;
 
     for (size_t i = 0; i < stringLength; i++)
     {
-        while (pm_goto_get(curState, string[i]) == NULL)
+        while (pm_goto_get<<< 1 , 1>>>(curState, string[i]) == NULL)
         {
             if (curState->depth == 0)
             {
