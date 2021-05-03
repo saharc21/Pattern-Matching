@@ -7,6 +7,8 @@
   */
 
 #include "slist.h"
+#include <cuda_runtime.h>
+
 
 #ifndef PATTERN_MATCHING_AHO_H
 #define PATTERN_MATCHING_AHO_H
