@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <math.h>
 #include <pthread.h>
 #include <time.h>
 #include <cuda_runtime.h>
@@ -12,12 +13,14 @@
 __device__ void print_pm(pm_t *pm);
 __device__ void print_state(pm_state_t *state, int tabs, int *is_need, int is_get);
 __device__ void print_tabs(int tabs, int *is_need);
-__global__ void search_patterns(pm_t *pm,  char *s,int lenOfS, slist_t *list);
+__global__ void search_patterns(pm_t *pm,  char *s,int lenOfS, slist_t *list, int offset);
 __global__ void initilaizeTree(pm_t * cu_pm);
 void cleanup_destroy(slist_t *list);
 
 char s1[PM_CHARACTERS];
-__device__ int NUM_OF_THREADS;
+int MAX_THEADS_FOR_EPOCH;
+int NUM_OF_THREADS;
+
 
 int main(int argc, char *argv[]) // ********************* Aho - parallel ***********************
 {
@@ -26,8 +29,15 @@ int main(int argc, char *argv[]) // ********************* Aho - parallel *******
     fgets(s1, PM_CHARACTERS, (FILE *)fp);
     int numOfChars = strlen(strtok(s1, "\0"));
     
-    // NUM_OF_THREADS = numOfChars - 113;
-    NUM_OF_THREADS = 10;
+    MAX_THEADS_FOR_EPOCH = 1024;
+    
+    if(numOfChars< MAX_THEADS_FOR_EPOCH){    
+        NUM_OF_THREADS = numOfChars;
+    }    
+
+    else{
+        NUM_OF_THREADS = MAX_THEADS_FOR_EPOCH;
+    }
     
     // pthread_t *tids = (pthread_t *)malloc(sizeof(pthread_t) * NUM_OF_THREADS);
     
@@ -72,7 +82,14 @@ int main(int argc, char *argv[]) // ********************* Aho - parallel *******
 
     // printf("gpu tree: \n");
     // print_pm(cu_pm);
-    search_patterns<<< 1, NUM_OF_THREADS>>>(&(*cu_pm), cu_s1, len, list);
+
+    int loop_limit = (numOfChars%NUM_OF_THREADS)/MAX_THEADS_FOR_EPOCH;
+    if(numOfChars%NUM_OF_THREADS > 0)
+        loop_limit++;
+    int offset;
+    for (offset = 0; offset <= loop_limit; offset++){
+        search_patterns<<< 1, NUM_OF_THREADS>>>(&(*cu_pm), cu_s1, len, list, MAX_THEADS_FOR_EPOCH*offset);
+    }
 
     printf("in main\n");
     cudaDeviceSynchronize();
@@ -80,12 +97,13 @@ int main(int argc, char *argv[]) // ********************* Aho - parallel *******
 
     // cudaFree(cu_pm);
     // cudaFree(cu_s1);
+    end = clock();
+    printf("\nExecuted time is: %f ms. \n\n", ((double)(end - begin) / CLOCKS_PER_SEC) * 1000);
     
     cleanup_destroy(list);
 
     end = clock();
     // fclose(fp);
-    printf("\nExecuted time is: %f ms. \n\n", ((double)(end - begin) / CLOCKS_PER_SEC) * 1000);
     return 0;
 }
 
@@ -96,21 +114,27 @@ __global__ void initilaizeTree(pm_t * cu_pm)
     {
         return;
     }
-    if (pm_addstring_gpu(cu_pm, (unsigned char *)"hello", 5) == -1){
-        return;
-    }    
-    if (pm_addstring_gpu(cu_pm, (unsigned char *)"GPU", 3) == -1){
+    if (pm_addstring_gpu(cu_pm, (unsigned char *)"Hello", 5) == -1){
         return;
     }
+    if (pm_addstring_gpu(cu_pm, (unsigned char *)"ABC153541278920", 15) == -1){
+        return;
+    }    
+ 
+    if (pm_addstring_gpu(cu_pm, (unsigned char *)"2222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222", 115) == -1){
+        return;
+    }    
+ 
+    // print_pm(cu_pm);    
+ 
     if (pm_makeFSM_gpu(cu_pm) == -1){
         return;
     }
-    print_pm(cu_pm);    
 }
 
-__global__ void search_patterns(pm_t *pm,  char *s, int lenOfS, slist_t *list)
+__global__ void search_patterns(pm_t *pm,  char *s, int lenOfS, slist_t *list, int offset)
 {
-    pm_fsm_search<<< 1,1>>>(pm->zerostate, (unsigned char *)(&s[threadIdx.x]), lenOfS-threadIdx.x, threadIdx.x);
+    pm_fsm_search<<< 1,1>>>(pm->zerostate, (unsigned char *)(&s[ offset + threadIdx.x]), lenOfS-threadIdx.x, offset + threadIdx.x);
 }
 
 void cleanup_destroy( slist_t *list ){
@@ -187,7 +211,6 @@ __device__ void print_state(pm_state_t *state, int tabs, int *is_need, int is_ge
         }
         print_state(edge->state, tabs + 1, is_need, is_get);
     }
-    // print_tabs(tabs, is_need);
     cudaDeviceSynchronize();
 }
 
