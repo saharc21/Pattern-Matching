@@ -47,7 +47,11 @@ typedef enum { SLIST_LEAVE_DATA = 0, SLIST_FREE_DATA } slist_destroy_t;
 
 /** Initialize a single linked list
 	\param list - the list to initialize */
-__global__ void slist_init(slist_t *);
+__device__ void slist_init_gpu(slist_t *);
+
+/** Initialize a single linked list
+	\param list - the list to initialize */
+void slist_init_cpu(slist_t *);
 
 /** Destroy and de-allocate the memory hold by a list
 	\param list - a pointer to an existing list
@@ -57,13 +61,23 @@ void slist_destroy(slist_t *,slist_destroy_t);
 /** Pop the first element in the list
 	\param list - a pointer to a list
 	\return a pointer to the data of the element, or NULL if the list is empty */
-void *slist_pop_first(slist_t *);
+// void *slist_pop_first(slist_t *);
+__device__ void slist_pop_first(slist_t *list, void* returnValue); //if there is information in first data, return pointer to the data and delete the first node. else, return null.(don't forget decrease the size of list)
+
 
 /** Append data to list (add as last node of the list)
 	\param list - a pointer to a list
 	\param data - the data to place in the list
 	\return 0 on success, or -1 on failure */
-__global__ int slist_append(slist_t *,void *);
+__device__ int slist_append_gpu(slist_t *,void *);
+
+/** Append data to list (add as last node of the list)
+	\param list - a pointer to a list
+	\param data - the data to place in the list
+	\return 0 on success, or -1 on failure */
+int slist_append_cpu(slist_t *,void *);
+
+
 
 /** Prepend data to list (add as first node of the list)
 	\param list - a pointer to list
@@ -80,5 +94,6 @@ int slist_prepend(slist_t *,void *);
 	\return 0 on success, or -1 on failure
 */
 int slist_append_list(slist_t*, slist_t*);
+__device__ int slist_append_list_gpu(slist_t*, slist_t*);
 
 #endif
