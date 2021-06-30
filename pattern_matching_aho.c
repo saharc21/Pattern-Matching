@@ -55,7 +55,7 @@ __device__ int pm_init_gpu(pm_t *fsm)
 //     {
 //         return -1;
 //     }
-//     slist_init_cpu(fsm->zerostate->_transitions);
+//     slist_init(fsm->zerostate->_transitions);
 //     fsm->zerostate->depth = 0;
 //     fsm->zerostate->id = 0;
 //     fsm->zerostate->output = NULL;
@@ -96,7 +96,7 @@ __device__ pm_state_t * pm_goto_get_gpu(pm_state_t *state, unsigned char symbol)
 }
 
 //----- Return the destination state if there is an edge that connect the source to the destination state with specific symbol
-pm_state_t *pm_goto_get_cpu(pm_state_t *state, unsigned char symbol)
+pm_state_t *pm_goto_get(pm_state_t *state, unsigned char symbol)
 {
     int findIndication = 0; // '0' symbol not found, '1' found.
     slist_node_t *transitionPtr = slist_head(state->_transitions);
@@ -153,7 +153,7 @@ __device__ int pm_goto_set_gpu(pm_state_t *from_state, unsigned char symbol, pm_
 //     newLableToAdd->state = to_state;
 
 //     //----- add the new state to the 'from_state' as a transition
-//     slist_append_cpu(from_state->_transitions, newLableToAdd);
+//     slist_append(from_state->_transitions, newLableToAdd);
 //     // printf("%d -> %c -> %d\n",from_state->id,symbol,to_state->id);
 
 //     return 0;
@@ -241,9 +241,9 @@ __device__ int pm_addstring_gpu(pm_t *fsm, unsigned char *stringToAdd, size_t n)
 //     pm_state_t *statePtr = fsm->zerostate;
 //     while (charIndexInString < n && fsm->newstate != 1)
 //     {
-//         if (pm_goto_get_cpu(statePtr, stringToAdd[charIndexInString]) != NULL)
+//         if (pm_goto_get(statePtr, stringToAdd[charIndexInString]) != NULL)
 //         {
-//             statePtr = pm_goto_get_cpu(statePtr, stringToAdd[charIndexInString]);
+//             statePtr = pm_goto_get(statePtr, stringToAdd[charIndexInString]);
 //             charIndexInString++;
 //         }
 //         else
@@ -279,14 +279,14 @@ __device__ int pm_addstring_gpu(pm_t *fsm, unsigned char *stringToAdd, size_t n)
 //             {
 //                 return -1;
 //             }
-//             slist_init_cpu(to_state->_transitions);
-//             slist_init_cpu(to_state->output);
+//             slist_init(to_state->_transitions);
+//             slist_init(to_state->output);
 
 //             //----- if it's the last character of the string add the string to stat's output
 //             if (i + 1 == n)
 //             {
 //                 //----- add new node to the outputs list
-//                 slist_append_cpu(to_state->output, stringToAdd);
+//                 slist_append(to_state->output, stringToAdd);
 //             }
 //             pm_goto_set(statePtr, stringToAdd[i], to_state);
 //             statePtr = to_state;
@@ -381,13 +381,13 @@ __device__ int pm_makeFSM_gpu(pm_t *fsm)
 //         return -1;
 //     }
 
-//     slist_init_cpu(statesQueue);
+//     slist_init(statesQueue);
 
 //     //----- initilize the zerostate transitions failure states
 //     slist_node_t *statePtr = slist_head(fsm->zerostate->_transitions);
 //     while (statePtr != NULL)
 //     {
-//         slist_append_cpu(statesQueue, ((pm_labeled_edge_t *)slist_data(statePtr))->state);
+//         slist_append(statesQueue, ((pm_labeled_edge_t *)slist_data(statePtr))->state);
 //         ((pm_labeled_edge_t *)slist_data(statePtr))->state->fail = fsm->zerostate;
 //         statePtr = slist_next(statePtr);
 //     }
@@ -402,12 +402,12 @@ __device__ int pm_makeFSM_gpu(pm_t *fsm)
 //             statePtr = slist_head(fatherState->_transitions);
 //             while (statePtr != NULL)
 //             {
-//                 slist_append_cpu(statesQueue, ((pm_labeled_edge_t *)slist_data(statePtr))->state);
+//                 slist_append(statesQueue, ((pm_labeled_edge_t *)slist_data(statePtr))->state);
 //                 while (fatherState != NULL)
 //                 {
-//                     if (pm_goto_get_cpu(fatherState->fail, ((pm_labeled_edge_t *)slist_data(statePtr))->label) != NULL)
+//                     if (pm_goto_get(fatherState->fail, ((pm_labeled_edge_t *)slist_data(statePtr))->label) != NULL)
 //                     {
-//                         ((pm_labeled_edge_t *)slist_data(statePtr))->state->fail = pm_goto_get_cpu(fatherState->fail,
+//                         ((pm_labeled_edge_t *)slist_data(statePtr))->state->fail = pm_goto_get(fatherState->fail,
 //                                                                                                ((pm_labeled_edge_t *)slist_data(statePtr))->label);
 //                         // printf("Setting f(%d) = %d\n",
 //                         // ((pm_labeled_edge_t *)slist_data(statePtr))->state->id,((pm_labeled_edge_t *)slist_data(statePtr))->state->fail->id);
@@ -430,73 +430,8 @@ __device__ int pm_makeFSM_gpu(pm_t *fsm)
 // }
 
 
-// int pm_makeFSM_dfa(pm_t *fsm)
-// {
-//     if (fsm == NULL)
-//     {
-//         return -1;
-//     }
-
-//     if (fsm->zerostate->_transitions == NULL)
-//     {
-//         return 0;
-//     }
-
-//     slist_t *statesQueue = (slist_t *)malloc(sizeof(slist_t));
-//     if (statesQueue == NULL)
-//     {
-//         return -1;
-//     }
-
-//     slist_init_cpu(statesQueue);
-
-//     //----- initilize the zerostate transitions failure states
-//     slist_node_t *statePtr = slist_head(fsm->zerostate->_transitions);
-//     while (statePtr != NULL)
-//     {
-//         slist_append_cpu(statesQueue, ((pm_labeled_edge_t *)slist_data(statePtr))->state);
-//         ((pm_labeled_edge_t *)slist_data(statePtr))->state->fail = fsm->zerostate;
-//         statePtr = slist_next(statePtr);
-//     }
-
-//     pm_state_t *fatherState;
-//     //----- initilize the rest states failure states
-//     while (statesQueue->head != NULL)
-//     {
-//         fatherState = slist_pop_first_gpu(statesQueue);
-//         if (fatherState != NULL && fatherState->_transitions != NULL)
-//         {
-//             statePtr = slist_head(fatherState->_transitions);
-//             while (statePtr != NULL)
-//             {
-//                 slist_append_cpu(statesQueue, ((pm_labeled_edge_t *)slist_data(statePtr))->state);
-//                 while (fatherState != NULL)
-//                 {
-//                     if (pm_goto_get_cpu(fatherState->fail, ((pm_labeled_edge_t *)slist_data(statePtr))->label) != NULL)
-//                     {
-//                         ((pm_labeled_edge_t *)slist_data(statePtr))->state->fail = fsm->zerostate;
-//                         // printf("Setting f(%d) = %d\n",
-//                         //    ((pm_labeled_edge_t *)slist_data(statePtr))->state->id, ((pm_labeled_edge_t *)slist_data(statePtr))->state->fail->id);
-//                         break;
-//                     }
-//                     if (fatherState->fail == fsm->zerostate)
-//                     {
-//                         ((pm_labeled_edge_t *)slist_data(statePtr))->state->fail = fsm->zerostate;
-//                         break;
-//                     }
-//                     fatherState = fatherState->fail;
-//                 }
-//                 slist_append_list(((pm_labeled_edge_t *)slist_data(statePtr))->state->output, ((pm_labeled_edge_t *)slist_data(statePtr))->state->fail->output);
-//                 statePtr = slist_next(statePtr);
-//             }
-//         }
-//     }
-//     free(statesQueue);
-//     return 0;
-// }
-
 //----- Search if a given String is contains the FSM labls
-__global__ void pm_fsm_search(pm_state_t *curState, unsigned char *string, size_t stringLength, size_t threadId)
+__device__ void pm_fsm_search(pm_state_t *curState, unsigned char *string, size_t stringLength, size_t threadId)
 {
     if (curState == NULL || string == NULL || stringLength == 0)
     {
@@ -524,12 +459,10 @@ __global__ void pm_fsm_search(pm_state_t *curState, unsigned char *string, size_
         // cudaMemcpy(cu_state, curState,sizeof(curState),cudaMemcpyHostToDevice);
         pm_state_t* returnState = NULL;
         returnState = pm_goto_get_gpu(curState, string[i]);
-        cudaDeviceSynchronize();
 
         while (returnState == NULL)
         {
             if (curState->depth == 0)
-
             {
                 return;
             }
@@ -541,7 +474,6 @@ __global__ void pm_fsm_search(pm_state_t *curState, unsigned char *string, size_
             curState = curState->fail;
         }
         returnState = pm_goto_get_gpu(curState, string[i]);
-        cudaDeviceSynchronize();
 
         if (returnState != NULL)
         {
@@ -576,59 +508,59 @@ __global__ void pm_fsm_search(pm_state_t *curState, unsigned char *string, size_
     }
 }
 
-//----- Destroy the FSM
-void pm_destroy(pm_t *fsm)
-{
-    if (fsm == NULL)
-    {
-        return;
-    }
+// //----- Destroy the FSM
+// void pm_destroy(pm_t *fsm)
+// {
+//     if (fsm == NULL)
+//     {
+//         return;
+//     }
 
-    //-----If the FSM just created and didn't add any string to it.
-    if (fsm->newstate == 1)
-    {
-        if (fsm->zerostate->_transitions != NULL)
-            free(fsm->zerostate->_transitions);
-        free(fsm->zerostate);
-        return;
-    }
-    slist_t *statesQueue = (slist_t *)malloc(sizeof(slist_t));
-    if (statesQueue == NULL)
-    {
-        return;
-    }
+//     //-----If the FSM just created and didn't add any string to it.
+//     if (fsm->newstate == 1)
+//     {
+//         if (fsm->zerostate->_transitions != NULL)
+//             free(fsm->zerostate->_transitions);
+//         free(fsm->zerostate);
+//         return;
+//     }
+//     slist_t *statesQueue = (slist_t *)malloc(sizeof(slist_t));
+//     if (statesQueue == NULL)
+//     {
+//         return;
+//     }
 
-    slist_init_cpu(statesQueue);
+//     slist_init(statesQueue);
 
-    slist_append_cpu(statesQueue, fsm->zerostate);
+//     slist_append(statesQueue, fsm->zerostate);
 
-    pm_state_t *stateToFree;
-    slist_node_t *transitionsPtr = slist_head(fsm->zerostate->_transitions);
+//     pm_state_t *stateToFree;
+//     slist_node_t *transitionsPtr = slist_head(fsm->zerostate->_transitions);
 
-    while (statesQueue->head != NULL)
-    {
-        stateToFree = (pm_state_t *)slist_pop_first(statesQueue);
-        if(stateToFree == NULL){
-            return;
-        }
-        transitionsPtr = slist_head(stateToFree->_transitions);
+//     while (statesQueue->head != NULL)
+//     {
+//         stateToFree = (pm_state_t *)slist_pop_first(statesQueue);
+//         if(stateToFree == NULL){
+//             return;
+//         }
+//         transitionsPtr = slist_head(stateToFree->_transitions);
 
-        while (transitionsPtr != NULL)
-        {
-            slist_append_cpu(statesQueue, ((pm_labeled_edge_t *)slist_data(transitionsPtr))->state);
-            transitionsPtr = slist_next(transitionsPtr);
-        }
+//         while (transitionsPtr != NULL)
+//         {
+//             slist_append(statesQueue, ((pm_labeled_edge_t *)slist_data(transitionsPtr))->state);
+//             transitionsPtr = slist_next(transitionsPtr);
+//         }
 
-        slist_destroy(stateToFree->_transitions, SLIST_FREE_DATA);
-        free(stateToFree->_transitions);
+//         slist_destroy(stateToFree->_transitions, SLIST_FREE_DATA);
+//         free(stateToFree->_transitions);
 
-        if (stateToFree->output != NULL)
-        {
-            slist_destroy(stateToFree->output, SLIST_LEAVE_DATA);
-            free(stateToFree->output);
-        }
+//         if (stateToFree->output != NULL)
+//         {
+//             slist_destroy(stateToFree->output, SLIST_LEAVE_DATA);
+//             free(stateToFree->output);
+//         }
 
-        free(stateToFree);
-    }
-    free(statesQueue);
-}
+//         free(stateToFree);
+//     }
+//     free(statesQueue);
+// }

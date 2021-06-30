@@ -51,7 +51,7 @@ __device__ void slist_init_gpu(slist_t *);
 
 /** Initialize a single linked list
 	\param list - the list to initialize */
-void slist_init_cpu(slist_t *);
+void slist_init(slist_t *);
 
 /** Destroy and de-allocate the memory hold by a list
 	\param list - a pointer to an existing list
@@ -75,7 +75,7 @@ __device__ int slist_append_gpu(slist_t *,void *);
 	\param list - a pointer to a list
 	\param data - the data to place in the list
 	\return 0 on success, or -1 on failure */
-int slist_append_cpu(slist_t *,void *);
+int slist_append(slist_t *,void *);
 
 
 

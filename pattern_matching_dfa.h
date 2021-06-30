@@ -7,6 +7,8 @@
   */
 
 #include "slist.h"
+#include <cuda_runtime.h>
+
 
 #ifndef PATTERN_MATCHING_DFA_H
 #define PATTERN_MATCHING_DFA_H
@@ -58,34 +60,51 @@ struct pm
 	pm_int_t newstate;  //the id of the next state (i.e. the number of states allocated so far in the FSM)
 	pm_state_t *zerostate; //pointer to the root
 };
-
 typedef struct pm pm_t;
+
+
+/* FSM's strings details */
+struct pts
+{
+	unsigned char * string;  // The Pattern's string
+	int len; // String length
+};
+typedef struct pts pattern_details;
+
 
 
 /* Initializes the fsm parameters (the fsm itself sould be allocated).  Returns 0 on success, -1 on failure. 
 *  this function should init zero state
 */
+__device__ int pm_init_gpu(pm_t *);
 int pm_init(pm_t *);
 
 /* Adds a new string to the fsm, given that the string is of length n. 
    Returns 0 on success, -1 on failure.*/
+__device__ int pm_addstring_gpu(pm_t *,unsigned char *, size_t n);
 int pm_addstring(pm_t *,unsigned char *, size_t n);
 
 /* Finalizes construction by setting up the failrue transitions, as
    well as the goto transitions of the zerostate. 
    Returns 0 on success, -1 on failure.*/
+__device__ int pm_makeFSM_gpu(pm_t *);
 int pm_makeFSM(pm_t *);
 
 
 /* Set a transition arrow from this from_state, via a symbol, to a
    to_state. will be used in the pm_addstring and pm_makeFSM functions.
    Returns 0 on success, -1 on failure.*/   
+__device__ int pm_goto_set_gpu(pm_state_t *from_state,
+			   unsigned char symbol,
+			   pm_state_t *to_state);
 int pm_goto_set(pm_state_t *from_state,
 			   unsigned char symbol,
 			   pm_state_t *to_state);
 
 /* Returns the transition state.  If no such state exists, returns NULL. 
    will be used in pm_addstring, pm_makeFSM, pm_fsm_search, pm_destroy functions. */
+__device__ pm_state_t* pm_goto_get_gpu(pm_state_t *state,
+					    unsigned char symbol);
 pm_state_t* pm_goto_get(pm_state_t *state,
 					    unsigned char symbol);
 
@@ -93,6 +112,7 @@ pm_state_t* pm_goto_get(pm_state_t *state,
 
 /* Search for matches in a string of size n in the FSM. 
    if there are no matches return empty list */
+__device__ void pm_fsm_search_gpu(pm_state_t *curState, unsigned char *string, size_t stringLength);
 slist_t* pm_fsm_search(pm_state_t *,unsigned char *,size_t);
 
 

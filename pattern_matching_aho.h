@@ -109,12 +109,12 @@ __device__ pm_state_t * pm_goto_get_gpu(pm_state_t *state,
 
 /* Returns the transition state.  If no such state exists, returns NULL. 
    will be used in pm_addstring, pm_makeFSM, pm_fsm_search, pm_destroy functions. */
-pm_state_t *pm_goto_get_cpu(pm_state_t *state,
+pm_state_t *pm_goto_get(pm_state_t *state,
 						unsigned char symbol);
 
 /* Search for matches in a string of size n in the FSM. 
    if there are no matches return empty list */
-__global__ void pm_fsm_search(pm_state_t *, unsigned char *, size_t, size_t);
+__device__ void pm_fsm_search(pm_state_t *, unsigned char *, size_t, size_t);
 
 /* Destroys the fsm, deallocating memory. */
 void pm_destroy(pm_t *);
